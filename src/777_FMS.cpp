@@ -130,6 +130,11 @@ void unregister_data_refs()
 		double_datarefs.at(i).dr.unReg();
 	}
 
+	for (int i = 0; i < float_datarefs.size(); i++)
+	{
+		float_datarefs.at(i).dr.unReg();
+	}
+
 	for (int i = 0; i < str_datarefs.size(); i++)
 	{
 		str_datarefs.at(i).dr.unReg();
