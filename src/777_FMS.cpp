@@ -15,7 +15,7 @@ enum FMS_constants
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-std::vector<int> int_dr_values = { 0, 0, 0, -1, 0 };
+std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0 };
 std::vector<double> double_dr_values = { 0, 0, 0, 0 };
 float sel_wpt_pos[3 * N_CDU_OUT_LINES];
 char nav_ref_in_icao[NAV_REF_ICAO_BUF_LENGTH];
@@ -27,7 +27,10 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_R/clear_msg", true, nullptr}, &int_dr_values[1]},
 	{{"Strato/777/FMC/FMC_R/page", true, nullptr}, &int_dr_values[2]},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", true, nullptr}, &int_dr_values[3]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", true, nullptr}, &int_dr_values[4]}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", true, nullptr}, &int_dr_values[4]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", true, nullptr}, &int_dr_values[5]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", false, nullptr}, &int_dr_values[6]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", true, nullptr},& int_dr_values[7]}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
@@ -61,7 +64,8 @@ StratosphereAvionics::fmc_in_drs fmc_in = {
 											"sim/flightmodel/position/longitude",
 
 										   {"Strato/777/FMC/FMC_R/REF_NAV/input_icao"},
-										   {"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx"},
+										   {"Strato/777/FMC/FMC_R/SEL_WPT/subpage",
+										    "Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx"},
 											"Strato/777/FMC/FMC_R/clear_msg",
 											"Strato/777/FMC/FMC_R/page"
 										  };
@@ -74,7 +78,9 @@ StratosphereAvionics::fmc_out_drs fmc_out = {
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_elev",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq"},
 
-											 {"Strato/777/FMC/FMC_R/SEL_WPT/poi_list"},
+											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
+											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
+											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_list"},
 											  "Strato/777/FMC/FMC_R/scratchpad_msg"
 											};
 
