@@ -191,7 +191,7 @@ namespace XPDataBus
 	void DataBus::set_datai(std::string dr_name, int value, int offset)
 	{
 		int val_type = xplmType_Int;
-		if (offset > 0)
+		if (offset >= 0)
 		{
 			val_type = xplmType_IntArray;
 		}
@@ -203,7 +203,7 @@ namespace XPDataBus
 	void DataBus::set_dataf(std::string dr_name, float value, int offset)
 	{
 		int val_type = xplmType_Float;
-		if (offset > 0)
+		if (offset >= 0)
 		{
 			val_type = xplmType_FloatArray;
 		}

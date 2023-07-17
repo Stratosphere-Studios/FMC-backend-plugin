@@ -81,9 +81,9 @@ namespace XPDataBus
 
 		void set_data(std::string dr_name, generic_val value);
 
-		void set_datai(std::string dr_name, int value, int offset=0);
+		void set_datai(std::string dr_name, int value, int offset=-1);
 
-		void set_dataf(std::string dr_name, float value, int offset=0);
+		void set_dataf(std::string dr_name, float value, int offset=-1);
 
 		void set_datad(std::string dr_name, double value);
 
