@@ -36,12 +36,12 @@ namespace StratosphereAvionics
 
 	struct fmc_sel_desired_wpt_in_drs
 	{
-		std::string poi_idx;
+		std::string curr_page, poi_idx;
 	};
 
 	struct fmc_sel_desired_wpt_out_drs
 	{
-		std::string poi_list;
+		std::string is_active, n_subpages, poi_list;
 	};
 
 	struct fmc_in_drs
@@ -111,12 +111,16 @@ namespace StratosphereAvionics
 
 		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs* in, fmc_out_drs* out);
 
-		void clear_screen();
+		geo::point get_ac_pos();
 
 		libnav::navaid_entry update_sel_navaid(std::string id,
 							  std::vector<libnav::navaid_entry>* vec); // Updates SELECT DESIRED WPT page for navaids
 
+		void reset_sel_navaid();
+
 		void update_ref_nav(); // Updates REF NAV DATA page
+
+		void reset_ref_nav();
 
 		void update_scratch_msg(); // Updates scratch pad messages
 
