@@ -15,21 +15,19 @@ enum FMS_constants
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-std::vector<int> int_dr_values = { 0, 0 };
+std::vector<int> int_dr_values = { 0, 0, 0, -1, 0 };
 std::vector<double> double_dr_values = { 0, 0, 0, 0 };
+float sel_wpt_pos[3 * N_CDU_OUT_LINES];
 char nav_ref_in_icao[NAV_REF_ICAO_BUF_LENGTH];
 char nav_ref_out_icao[NAV_REF_ICAO_BUF_LENGTH];
-char fmc_line_1_big[FMC_SCREEN_LINE_LENGTH];
-char fmc_line_2_big[FMC_SCREEN_LINE_LENGTH];
-char fmc_line_3_big[FMC_SCREEN_LINE_LENGTH];
-char fmc_line_4_big[FMC_SCREEN_LINE_LENGTH];
-char fmc_line_5_big[FMC_SCREEN_LINE_LENGTH];
-char fmc_line_6_big[FMC_SCREEN_LINE_LENGTH];
 char scratchpad_msg[FMC_SCREEN_LINE_LENGTH];
 
 std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/UI/messages/creating_databases", false, nullptr}, &int_dr_values[0]},
-	{{"Strato/777/FMC/FMC_R/clear_msg", true, nullptr}, &int_dr_values[1]}
+	{{"Strato/777/FMC/FMC_R/clear_msg", true, nullptr}, &int_dr_values[1]},
+	{{"Strato/777/FMC/FMC_R/page", true, nullptr}, &int_dr_values[2]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", true, nullptr}, &int_dr_values[3]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", true, nullptr}, &int_dr_values[4]}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
@@ -39,15 +37,13 @@ std::vector<DRUtil::dref_d> double_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", false, nullptr}, &double_dr_values[3]}
 };
 
+std::vector<DRUtil::dref_fa> float_datarefs = {
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", false, nullptr}, sel_wpt_pos, 3 * N_CDU_OUT_LINES}
+};
+
 std::vector<DRUtil::dref_s> str_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", true, nullptr}, nav_ref_in_icao, NAV_REF_ICAO_BUF_LENGTH},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", false, nullptr}, nav_ref_out_icao, NAV_REF_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/line_1_big", false, nullptr}, fmc_line_1_big, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/line_2_big", false, nullptr}, fmc_line_2_big, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/line_3_big", false, nullptr}, fmc_line_3_big, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/line_4_big", false, nullptr}, fmc_line_4_big, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/line_5_big", false, nullptr}, fmc_line_5_big, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/line_6_big", false, nullptr}, fmc_line_6_big, FMC_SCREEN_LINE_LENGTH},
 	{{"Strato/777/FMC/FMC_R/scratchpad_msg", false, nullptr}, scratchpad_msg, FMC_SCREEN_LINE_LENGTH}
 };
 
@@ -61,24 +57,25 @@ std::shared_ptr<std::thread> avionics_thread;
 std::shared_ptr<std::thread> fmc_thread;
 
 StratosphereAvionics::fmc_in_drs fmc_in = { 
-											"Strato/777/FMC/FMC_R/REF_NAV/input_icao",
-											"Strato/777/FMC/FMC_R/clear_msg"
+											"sim/flightmodel/position/latitude",
+											"sim/flightmodel/position/longitude",
+
+										   {"Strato/777/FMC/FMC_R/REF_NAV/input_icao"},
+										   {"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx"},
+											"Strato/777/FMC/FMC_R/clear_msg",
+											"Strato/777/FMC/FMC_R/page"
 										  };
+
 StratosphereAvionics::fmc_out_drs fmc_out = { 
-											  "Strato/777/FMC/FMC_R/REF_NAV/out_icao",
-											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lat", 
-											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lon", 
+											 {"Strato/777/FMC/FMC_R/REF_NAV/out_icao",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_type",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lat",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lon",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_elev",
-											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq",
-											  "Strato/777/FMC/FMC_R/scratchpad_msg",
-											  {
-												"Strato/777/FMC/line_1_big",
-												"Strato/777/FMC/line_2_big",
-												"Strato/777/FMC/line_3_big",
-												"Strato/777/FMC/line_4_big",
-												"Strato/777/FMC/line_5_big",
-												"Strato/777/FMC/line_6_big"
-											  }
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq"},
+
+											 {"Strato/777/FMC/FMC_R/SEL_WPT/poi_list"},
+											  "Strato/777/FMC/FMC_R/scratchpad_msg"
 											};
 
 int data_refs_created = 0;
@@ -97,14 +94,24 @@ int register_data_refs()
 	for (int i = 0; i < double_datarefs.size(); i++)
 	{
 		double_datarefs.at(i).init();
-		XPDataBus::custom_data_ref_entry e = { double_datarefs.at(i).dr.name, {(void*)double_datarefs.at(i).val, xplmType_Double} };
+		XPDataBus::custom_data_ref_entry e = { double_datarefs.at(i).dr.name, {(void*)double_datarefs.at(i).val, 
+												xplmType_Double} };
+		data_refs.push_back(e);
+	}
+
+	for (int i = 0; i < float_datarefs.size(); i++)
+	{
+		float_datarefs.at(i).init();
+		XPDataBus::custom_data_ref_entry e = { float_datarefs.at(i).dr.name, {(void*)float_datarefs.at(i).array, 
+												xplmType_FloatArray, size_t(float_datarefs.at(i).n_length)} };
 		data_refs.push_back(e);
 	}
 
 	for (int i = 0; i < str_datarefs.size(); i++)
 	{
 		str_datarefs.at(i).init();
-		XPDataBus::custom_data_ref_entry e = { str_datarefs.at(i).dr.name, {(void*)str_datarefs.at(i).str, xplmType_Data, size_t(str_datarefs[i].n_length)}};
+		XPDataBus::custom_data_ref_entry e = { str_datarefs.at(i).dr.name, {(void*)str_datarefs.at(i).str, 
+												xplmType_Data, size_t(str_datarefs.at(i).n_length)}};
 		data_refs.push_back(e);
 	}
 
@@ -168,8 +175,8 @@ PLUGIN_API void	XPluginStop(void)
 	if (data_refs_created)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
-		avionics->sim_shutdown.store(true, std::memory_order_seq_cst);
-		fmc_l->sim_shutdown.store(true, std::memory_order_seq_cst);
+		avionics->sim_shutdown.store(true, std::memory_order_relaxed);
+		fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
 		sim_databus->cleanup();
 		fmc_thread->join();
 		avionics_thread->join();
