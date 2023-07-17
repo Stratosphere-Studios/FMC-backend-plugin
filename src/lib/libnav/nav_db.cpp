@@ -9,6 +9,11 @@ namespace libnav
 		arpt_db = arpt_ptr;
 	}
 
+	bool NavDB::is_loaded()
+	{
+		return arpt_db->is_loaded() && navaid_db->is_loaded();
+	}
+
 	int NavDB::get_poi_type(std::string id)
 	{
 		if (arpt_db->is_airport(id))

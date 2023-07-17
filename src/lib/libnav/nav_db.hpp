@@ -34,6 +34,8 @@ namespace libnav
 	public:
 		NavDB(ArptDB* arpt_ptr, NavaidDB* navaid_ptr);
 
+		bool is_loaded();
+
 		int get_poi_type(std::string id);
 
 		//These member functions are just wrappers around ArptDB member functions.
