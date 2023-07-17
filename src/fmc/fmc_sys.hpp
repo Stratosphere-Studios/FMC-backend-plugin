@@ -13,24 +13,58 @@
 
 enum fmc_pages
 {
-	RTE = 1,
-	REF_NAV_DATA = 2
+	N_CDU_OUT_LINES = 6,
+
+	PAGE_OTHER = 0,
+	PAGE_RTE = 1,
+	PAGE_REF_NAV_DATA = 2
 };
 
 
 namespace StratosphereAvionics
 {
+	struct fmc_ref_nav_in_drs
+	{
+		std::string poi_id;
+	};
+
+	struct fmc_ref_nav_out_drs
+	{
+		std::string poi_id, poi_type, poi_lat, poi_lon, poi_elevation,
+			poi_freq;
+	};
+
+	struct fmc_sel_desired_wpt_in_drs
+	{
+		std::string poi_idx;
+	};
+
+	struct fmc_sel_desired_wpt_out_drs
+	{
+		std::string poi_list;
+	};
 
 	struct fmc_in_drs
 	{
-		std::string ref_nav_in_id, scratch_pad_msg_clear;
+		// Sim data refs:
+		std::string sim_ac_lat_deg, sim_ac_lon_deg;
+
+		// Custom data refs:
+		fmc_ref_nav_in_drs ref_nav;
+		fmc_sel_desired_wpt_in_drs sel_desired_wpt;
+		std::string scratch_pad_msg_clear, curr_page;
 	};
 
 	struct fmc_out_drs
 	{
-		std::string poi_name, poi_lat, poi_lon, poi_elevation,
-			poi_freq, scratchpad_msg;
-		std::vector<std::string> fmc_screen;
+		// REF NAV DATA
+		fmc_ref_nav_out_drs ref_nav;
+
+		// SELECT DESIRED WPT
+		fmc_sel_desired_wpt_out_drs sel_desired_wpt;
+
+		// MISC
+		std::string scratchpad_msg;
 	};
 
 	class AvionicsSys 
@@ -77,7 +111,12 @@ namespace StratosphereAvionics
 
 		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs* in, fmc_out_drs* out);
 
-		void update_ref_nav(); // Updates ref nav data page
+		void clear_screen();
+
+		libnav::navaid_entry update_sel_navaid(std::string id,
+							  std::vector<libnav::navaid_entry>* vec); // Updates SELECT DESIRED WPT page for navaids
+
+		void update_ref_nav(); // Updates REF NAV DATA page
 
 		void update_scratch_msg(); // Updates scratch pad messages
 
