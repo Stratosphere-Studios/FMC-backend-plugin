@@ -6,15 +6,14 @@ namespace libnav
 	// Public member functions
 
 	ArptDB::ArptDB(std::unordered_map<std::string, airport_data>* a_db, std::unordered_map<std::string, std::unordered_map<std::string, runway_entry>>* r_db,
-		std::string sim_arpt_path, std::string custom_arpt_path, std::string custom_rnw_path, double lat, double lon)
+		std::string sim_arpt_path, std::string custom_arpt_path, std::string custom_rnw_path)
 	{
 		arpt_db = a_db;
 		rnw_db = r_db;
 		sim_arpt_db_path = sim_arpt_path;
 		custom_arpt_db_path = custom_arpt_path;
 		custom_rnw_db_path = custom_rnw_path;
-		ac_lat = lat;
-		ac_lon = lon;
+
 		if (!does_db_exist(custom_arpt_db_path, custom_arpt_db_sign) || !does_db_exist(custom_rnw_db_path, custom_rnw_db_sign))
 		{
 			write_arpt_db.store(true, std::memory_order_seq_cst);
@@ -37,16 +36,16 @@ namespace libnav
 		}
 	}
 
-	int ArptDB::get_load_status()
+	bool ArptDB::is_loaded()
 	{
 		// Wait until all of the threads finish
 		arpt_db_task.get();
 		rnw_db_task.get();
 		if (apt_db_created || rnw_db_created)
 		{
-			return sim_db_loaded.get();
+			return bool(sim_db_loaded.get());
 		}
-		return 1;
+		return true;
 	}
 
 	// These functions need to be public because they're used in 
@@ -60,7 +59,7 @@ namespace libnav
 			std::string line;
 			int i = 0;
 			int limit = N_ARPT_LINES_IGNORE;
-			arpt_data tmp_arpt = { "", {{0, 0}, 0, 0} };
+			airport tmp_arpt = { "", {{0, 0}, 0, 0} };
 			rnw_data tmp_rnw = { "", {} };
 			double max_rnw_length_m = 0;
 
@@ -176,11 +175,11 @@ namespace libnav
 			{
 				std::lock_guard<std::mutex> lock(arpt_queue_mutex);
 				uint8_t precision = N_DOUBLE_OUT_PRECISION;
-				arpt_data data = arpt_queue[0];
+				airport data = arpt_queue[0];
 				arpt_queue.erase(arpt_queue.begin());
 
-				std::string arpt_lat = double_to_str(data.data.pos.lat_deg, precision);
-				std::string arpt_lon = double_to_str(data.data.pos.lon_deg, precision);
+				std::string arpt_lat = strutils::double_to_str(data.data.pos.lat_deg, precision);
+				std::string arpt_lon = strutils::double_to_str(data.data.pos.lon_deg, precision);
 				std::string arpt_icao_pos = data.icao + " " + arpt_lat + " " + arpt_lon;
 
 				out << arpt_icao_pos << " " << data.data.elevation_ft << " " << data.data.transition_alt_ft << " " << data.data.transition_level << "\n";
@@ -203,10 +202,10 @@ namespace libnav
 				rnw_queue.erase(rnw_queue.begin());
 				for (int i = 0; i < data.runways.size(); i++)
 				{
-					std::string rnw_start_lat = double_to_str(data.runways[i].data.start.lat_deg, precision);
-					std::string rnw_start_lon = double_to_str(data.runways[i].data.start.lon_deg, precision);
-					std::string rnw_end_lat = double_to_str(data.runways[i].data.end.lat_deg, precision);
-					std::string rnw_end_lon = double_to_str(data.runways[i].data.end.lon_deg, precision);
+					std::string rnw_start_lat = strutils::double_to_str(data.runways[i].data.start.lat_deg, precision);
+					std::string rnw_start_lon = strutils::double_to_str(data.runways[i].data.start.lon_deg, precision);
+					std::string rnw_end_lat = strutils::double_to_str(data.runways[i].data.end.lat_deg, precision);
+					std::string rnw_end_lon = strutils::double_to_str(data.runways[i].data.end.lon_deg, precision);
 
 					std::string rnw_start = rnw_start_lat + " " + rnw_start_lon;
 					std::string rnw_end = rnw_end_lat + " " + rnw_end_lon;
@@ -368,7 +367,7 @@ namespace libnav
 		return rnw_1.data.get_implied_length_meters();
 	}
 
-	void ArptDB::add_to_arpt_queue(arpt_data arpt)
+	void ArptDB::add_to_arpt_queue(airport arpt)
 	{
 		std::lock_guard<std::mutex> lock(arpt_queue_mutex);
 		arpt_queue.push_back(arpt);

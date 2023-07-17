@@ -5,7 +5,11 @@
 #include <unordered_map>
 #include <vector>
 #include <iterator>
-#include "common.hpp"
+#include <string>
+#include <sstream>
+#include <algorithm>
+#include "str_utils.hpp"
+#include "geo_utils.hpp"
 
 
 #define N_ARPT_LINES_IGNORE 3;
@@ -61,9 +65,7 @@ namespace libnav
 		airport_data data;
 	};
 
-	//These structs are only used to load the database.
-
-	struct arpt_data
+	struct airport
 	{
 		std::string icao;
 		airport_data data;
@@ -71,23 +73,22 @@ namespace libnav
 
 	struct rnw_data
 	{
-		std::string icao;
+		std::string icao; //Airport icao
 		std::vector<runway> runways;
 	};
+
+
+	//inline void sort_arpts_by_dist(std::vector<airport>* tile, double lat, double lon);
 
 
 	class ArptDB
 	{
 	public:
-		// Aircraft latitude and longitude
-
-		double ac_lat;
-		double ac_lon;
 
 		ArptDB(std::unordered_map<std::string, airport_data>* a_db, std::unordered_map<std::string, runway_data>* r_db,
-			std::string sim_arpt_path, std::string custom_arpt_path, std::string custom_rnw_path, double lat, double lon);
+			std::string sim_arpt_path, std::string custom_arpt_path, std::string custom_rnw_path);
 
-		int get_load_status();
+		bool is_loaded();
 
 		//These functions need to be public because they're used in 
 		//other threads when ArptDB object is constructed.
@@ -120,7 +121,7 @@ namespace libnav
 
 		std::atomic<bool> write_arpt_db{ false };
 
-		std::vector<arpt_data> arpt_queue;
+		std::vector<airport> arpt_queue;
 		std::vector<rnw_data> rnw_queue;
 
 		std::mutex arpt_queue_mutex;
@@ -144,7 +145,7 @@ namespace libnav
 
 		double parse_runway(std::string line, std::vector<runway>* rnw); // Returns runway length in meters
 
-		void add_to_arpt_queue(arpt_data arpt);
+		void add_to_arpt_queue(airport arpt);
 
 		void add_to_rnw_queue(rnw_data rnw);
 	};
