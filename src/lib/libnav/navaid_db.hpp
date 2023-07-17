@@ -6,10 +6,14 @@
 #include <unordered_map>
 #include <vector>
 #include <cstring>
-#include "common.hpp"
+#include <algorithm>
+#include <string>
+#include <sstream>
+#include "geo_utils.hpp"
 
 
 #define N_NAVAID_LINES_IGNORE 3; //Number of lines at the beginning of the .dat file to ignore
+
 
 enum navaid_types {
 	NAV_NDB = 2,
@@ -30,10 +34,36 @@ namespace libnav
 	struct navaid_entry
 	{
 		uint16_t type, max_recv;
-		geo::point wpt;
+		geo::point pos;
 		double elevation, mag_var, freq;
 	};
 
+	struct navaid
+	{
+		std::string id;
+		navaid_entry data;
+	};
+
+	struct waypoint
+	{
+		std::string id;
+		geo::point pos;
+	};
+
+
+	class WaypointCompare
+	{
+	public:
+		geo::point ac_pos; // Aircraft position
+		bool operator()(waypoint w1, waypoint w2);
+	};
+
+	class NavaidCompare
+	{
+	public:
+		geo::point ac_pos; // Aircraft position
+		bool operator()(navaid n1, navaid n2);
+	};
 
 	class NavaidDB
 	{
@@ -43,7 +73,7 @@ namespace libnav
 			std::unordered_map<std::string, std::vector<geo::point>>* wpt_db,
 			std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_db);
 
-		int get_load_status();
+		bool is_loaded();
 
 		int load_waypoints();
 
@@ -78,4 +108,11 @@ namespace libnav
 		std::unordered_map<std::string, std::vector<geo::point>>* wpt_cache;
 		std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_cache;
 	};
+
+
+	std::string navaid_to_str(int navaid_type);
+	
+	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p);
+
+	void sort_navaids_by_dist(std::vector<navaid>* vec, geo::point p);
 }

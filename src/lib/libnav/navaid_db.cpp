@@ -2,6 +2,20 @@
 
 namespace libnav
 {
+	bool WaypointCompare::operator()(waypoint w1, waypoint w2)
+	{
+		double d1 = w1.pos.getGreatCircleDistanceNM(ac_pos);
+		double d2 = w2.pos.getGreatCircleDistanceNM(ac_pos);
+		return d1 < d2;
+	}
+
+	bool NavaidCompare::operator()(navaid n1, navaid n2)
+	{
+		double d1 = n1.data.pos.getGreatCircleDistanceNM(ac_pos);
+		double d2 = n2.data.pos.getGreatCircleDistanceNM(ac_pos);
+		return d1 < d2;
+	}
+
 	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path,
 		std::unordered_map<std::string, std::vector<geo::point>>* wpt_db,
 		std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_db)
@@ -24,9 +38,9 @@ namespace libnav
 		navaid_loaded = std::async(std::launch::async, [](NavaidDB* db) -> int {return db->load_navaids(); }, this);
 	}
 
-	int NavaidDB::get_load_status()
+	bool NavaidDB::is_loaded()
 	{
-		return wpt_loaded.get() * navaid_loaded.get();
+		return bool(wpt_loaded.get() * navaid_loaded.get());
 	}
 
 	NavaidDB::~NavaidDB()
@@ -105,8 +119,8 @@ namespace libnav
 					s >> type >> lat >> lon >> elevation >> freq >> max_recv >> mag_var >> name >> junk;
 					tmp.type = type;
 					tmp.max_recv = max_recv;
-					tmp.wpt.lat_deg = lat;
-					tmp.wpt.lon_deg = lon;
+					tmp.pos.lat_deg = lat;
+					tmp.pos.lon_deg = lon;
 					tmp.elevation = elevation;
 					tmp.mag_var = mag_var;
 					tmp.freq = freq;
@@ -127,7 +141,7 @@ namespace libnav
 								break;
 							}
 							navaid_entry* navaid = &entries->at(i);
-							double ang_dev = abs(navaid->wpt.lat_deg - tmp.wpt.lat_deg) + abs(navaid->wpt.lon_deg - tmp.wpt.lon_deg);
+							double ang_dev = abs(navaid->pos.lat_deg - tmp.pos.lat_deg) + abs(navaid->pos.lon_deg - tmp.pos.lon_deg);
 							int type_sum = tmp.type + navaid->type;
 							int is_composite = 0;
 							if (type_sum <= max_comp)
@@ -209,5 +223,47 @@ namespace libnav
 			return n_navaids;
 		}
 		return 0;
+	}
+
+
+	std::string navaid_to_str(int navaid_type)
+	{
+		switch (navaid_type)
+		{
+		case NAV_NDB:
+			return "NDB";
+		case NAV_ILS_LOC_ONLY:
+			return "ILS";
+		case NAV_ILS_LOC:
+			return "ILS";
+		case NAV_ILS_GS:
+			return "ILS";
+		case NAV_ILS_FULL:
+			return "ILS";
+		case NAV_DME_ONLY:
+			return "DME";
+		case NAV_VOR_DME:
+			return "VORDME";
+		case NAV_ILS_DME:
+			return "ILSDME";
+		default:
+			return "";
+		}
+	}
+
+	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p)
+	{
+		WaypointCompare comp;
+		comp.ac_pos = p;
+
+		sort(vec->begin(), vec->end(), comp);
+	}
+
+	void sort_navaids_by_dist(std::vector<navaid>* vec, geo::point p)
+	{
+		NavaidCompare comp;
+		comp.ac_pos = p;
+
+		sort(vec->begin(), vec->end(), comp);
 	}
 }
