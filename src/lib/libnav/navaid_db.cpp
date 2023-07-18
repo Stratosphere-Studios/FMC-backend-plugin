@@ -2,23 +2,22 @@
 
 namespace libnav
 {
-	bool WaypointCompare::operator()(waypoint w1, waypoint w2)
+	bool WaypointEntryCompare::operator()(waypoint_entry w1, waypoint_entry w2)
 	{
 		double d1 = w1.pos.getGreatCircleDistanceNM(ac_pos);
 		double d2 = w2.pos.getGreatCircleDistanceNM(ac_pos);
 		return d1 < d2;
 	}
 
-	bool NavaidCompare::operator()(navaid n1, navaid n2)
+	bool WaypointCompare::operator()(waypoint w1, waypoint w2)
 	{
-		double d1 = n1.data.pos.getGreatCircleDistanceNM(ac_pos);
-		double d2 = n2.data.pos.getGreatCircleDistanceNM(ac_pos);
+		double d1 = w1.data.pos.getGreatCircleDistanceNM(ac_pos);
+		double d2 = w2.data.pos.getGreatCircleDistanceNM(ac_pos);
 		return d1 < d2;
 	}
 
 	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path,
-		std::unordered_map<std::string, std::vector<geo::point>>* wpt_db,
-		std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_db)
+		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db)
 	{
 		// Pre-defined stuff
 
@@ -32,11 +31,12 @@ namespace libnav
 		sim_navaid_db_path = navaid_path;
 
 		wpt_cache = wpt_db;
-		navaid_cache = navaid_db;
 
 		wpt_loaded = std::async(std::launch::async, [](NavaidDB* db) -> int {return db->load_waypoints(); }, this);
 		navaid_loaded = std::async(std::launch::async, [](NavaidDB* db) -> int {return db->load_navaids(); }, this);
 	}
+
+	// Public member functions:
 
 	bool NavaidDB::is_loaded()
 	{
@@ -60,30 +60,12 @@ namespace libnav
 			{
 				if (i >= limit)
 				{
-					// Construct a navaid entry.
+					// Construct a waypoint entry.
 					std::stringstream s(line);
-					double lat, lon;
-					std::string name;
 					std::string junk;
-					geo::point tmp;
-					s >> lat >> lon >> name >> junk;
-					tmp.lat_deg = lat;
-					tmp.lon_deg = lon;
-					// Find the navaid in the database by name.
-					if (wpt_cache->find(name) != wpt_cache->end())
-					{
-						// If there is a navaid with the same name in the database,
-						// add new entry to the vector.
-						wpt_cache->at(name).push_back(tmp);
-					}
-					else
-					{
-						// If there is no navaid with the same name in the database,
-						// add a vector with tmp
-						std::pair<std::string, std::vector<geo::point>> p;
-						p = std::make_pair(name, std::vector<geo::point>{tmp});
-						wpt_cache->insert(p);
-					}
+					waypoint wpt = { "", { NAV_WAYPOINT, {0, 0}, nullptr } };
+					s >> wpt.data.pos.lat_deg >> wpt.data.pos.lon_deg >> wpt.id >> junk;
+					add_to_wpt_cache(wpt);
 				}
 				i++;
 			}
@@ -113,61 +95,22 @@ namespace libnav
 					uint16_t type, max_recv;
 					double lat, lon, elevation, mag_var;
 					uint32_t freq;
-					std::string name;
+					std::string id;
 					std::string junk;
-					navaid_entry tmp;
-					s >> type >> lat >> lon >> elevation >> freq >> max_recv >> mag_var >> name >> junk;
-					tmp.type = type;
-					tmp.max_recv = max_recv;
-					tmp.pos.lat_deg = lat;
-					tmp.pos.lon_deg = lon;
-					tmp.elevation = elevation;
-					tmp.mag_var = mag_var;
-					tmp.freq = freq;
-					// Find the navaid in the database by name.
-					if (navaid_cache->find(name) != navaid_cache->end())
-					{
-						// If there is a navaid with the same name in the database,
-						// add new entry to the vector.
-						bool is_colocated = false;
-						bool is_duplicate = false;
-						std::vector<navaid_entry>* entries = &navaid_cache->at(name);
-						for (int i = 0; i < entries->size(); i++)
-						{
-							bool is_equal = !bool(memcmp(&entries->at(i), &tmp, sizeof(navaid_entry)));
-							if (is_equal)
-							{
-								is_duplicate = true;
-								break;
-							}
-							navaid_entry* navaid = &entries->at(i);
-							double ang_dev = abs(navaid->pos.lat_deg - tmp.pos.lat_deg) + abs(navaid->pos.lon_deg - tmp.pos.lon_deg);
-							int type_sum = tmp.type + navaid->type;
-							int is_composite = 0;
-							if (type_sum <= max_comp)
-							{
-								is_composite = comp_types[type_sum];
-							}
-							if (ang_dev < 0.001 && is_composite && tmp.freq == navaid->freq)
-							{
-								navaid->type = type_sum;
-								is_colocated = true;
-								break;
-							}
-						}
-						if (!is_colocated && !is_duplicate)
-						{
-							entries->push_back(tmp);
-						}
-					}
-					else
-					{
-						// If there is no navaid with the same name in the database,
-						// add a vector with tmp
-						std::pair<std::string, std::vector<navaid_entry>> p;
-						p = std::make_pair(name, std::vector<navaid_entry>{tmp});
-						navaid_cache->insert(p);
-					}
+
+					waypoint wpt;
+					navaid_entry navaid;
+
+					s >> type >> lat >> lon >> elevation >> freq >> max_recv >> mag_var >> id >> junk;
+
+					wpt.id = id;
+					wpt.data.type = type;
+					navaid.max_recv = max_recv;
+					wpt.data.pos.lat_deg = lat;
+					wpt.data.pos.lon_deg = lon;
+					navaid.elevation = elevation;
+					navaid.freq = freq;
+					add_to_navaid_cache(wpt, navaid);
 				}
 				else if (check_val == "99")
 				{
@@ -187,12 +130,35 @@ namespace libnav
 		return wpt_cache->find(id) != wpt_cache->end();
 	}
 
-	size_t NavaidDB::get_wpt_info(std::string id, std::vector<geo::point>* out)
+	bool NavaidDB::is_navaid_of_type(std::string id, std::vector<int> types)
+	{
+		std::lock_guard<std::mutex> lock(wpt_db_mutex);
+		if (is_wpt(id))
+		{
+			uint16_t arr[NAV_ILS_DME];
+			for (int i = 0; i < types.size(); i++)
+			{
+				arr[types.at(i)] = 1;
+			}
+			std::vector<waypoint_entry>* entries = &wpt_cache->at(id);
+			for (int i = 0; i < entries->size(); i++)
+			{
+				uint16_t type = entries->at(i).type;
+				if (arr[type])
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	size_t NavaidDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
 	{
 		if (is_wpt(id))
 		{
 			std::lock_guard<std::mutex> lock(wpt_db_mutex);
-			std::vector<geo::point>* waypoints = &wpt_cache->at(id);
+			std::vector<waypoint_entry>* waypoints = &wpt_cache->at(id);
 			size_t n_waypoints = waypoints->size();
 			for (int i = 0; i < n_waypoints; i++)
 			{
@@ -203,26 +169,96 @@ namespace libnav
 		return 0;
 	}
 
-	bool NavaidDB::is_navaid(std::string id)
+	// Private member functions:
+
+	void NavaidDB::add_to_wpt_cache(waypoint wpt)
 	{
-		std::lock_guard<std::mutex> lock(navaid_db_mutex);
-		return navaid_cache->find(id) != navaid_cache->end();
+		// Find the navaid in the database by name.
+		if (is_wpt(wpt.id))
+		{
+			std::lock_guard<std::mutex> lock(wpt_db_mutex);
+			// If there is a waypoint with the same name in the database,
+			// add new entry to the vector.
+			wpt_cache->at(wpt.id).push_back(wpt.data);
+		}
+		else
+		{
+			std::lock_guard<std::mutex> lock(wpt_db_mutex);
+			// If there is no waypoint with the same name in the database,
+			// add a vector with tmp
+			std::pair<std::string, std::vector<waypoint_entry>> p;
+			p = std::make_pair(wpt.id, std::vector<waypoint_entry>{wpt.data});
+			wpt_cache->insert(p);
+		}
 	}
 
-	size_t NavaidDB::get_navaid_info(std::string id, std::vector<navaid_entry>* out)
+	void NavaidDB::add_to_navaid_cache(waypoint wpt, navaid_entry data)
 	{
-		if (is_navaid(id))
+		// Find the navaid in the database by name.
+		if (is_wpt(wpt.id))
 		{
-			std::lock_guard<std::mutex> lock(navaid_db_mutex);
-			std::vector<navaid_entry>* navaids = &navaid_cache->at(id);
-			size_t n_navaids = navaids->size();
-			for (size_t i = 0; i < n_navaids; i++)
+			// If there is a navaid with the same name in the database,
+			// add new entry to the vector.
+			bool is_colocated = false;
+			bool is_duplicate = false;
+			std::vector<waypoint_entry>* entries = &wpt_cache->at(wpt.id);
+			for (int i = 0; i < entries->size(); i++)
 			{
-				out->push_back(navaids->at(i));
+				if (entries->at(i).navaid)
+				{
+					waypoint_entry* tmp_wpt = &entries->at(i);
+					navaid_entry* tmp_navaid = tmp_wpt->navaid;
+
+					bool is_wpt_equal = !bool(memcmp(&tmp_wpt->pos, &wpt.data.pos, sizeof(geo::point)));
+					bool is_type_equal = tmp_wpt->type == wpt.data.type;
+					bool is_nav_equal = !bool(memcmp(tmp_navaid, &data, sizeof(navaid_entry)));
+					bool is_equal = is_wpt_equal && is_nav_equal && is_type_equal;
+
+					if (is_equal)
+					{
+						is_duplicate = true;
+						break;
+					}
+
+					double lat_dev = abs(wpt.data.pos.lat_deg - tmp_wpt->pos.lat_deg);
+					double lon_dev = abs(wpt.data.pos.lon_deg - tmp_wpt->pos.lon_deg);
+					double ang_dev = lat_dev + lon_dev;
+					int type_sum = wpt.data.type + tmp_wpt->type;
+					int is_composite = 0;
+					if (type_sum <= max_comp)
+					{
+						is_composite = comp_types[type_sum];
+					}
+					if (ang_dev < 0.001 && is_composite && data.freq == tmp_navaid->freq)
+					{
+						tmp_wpt->type = type_sum;
+						is_colocated = true;
+						break;
+					}
+				}
 			}
-			return n_navaids;
+			if (!is_colocated && !is_duplicate)
+			{
+				navaid_entry* ptr = new navaid_entry;
+				memcpy(ptr, &data, sizeof(navaid_entry));
+
+				wpt.data.navaid = ptr;
+
+				std::lock_guard<std::mutex> lock(wpt_db_mutex);
+				entries->push_back(wpt.data);
+			}
 		}
-		return 0;
+		else
+		{
+			// If there is no navaid with the same name in the database,
+			// add a vector with tmp
+			navaid_entry* ptr = new navaid_entry;
+			memcpy(ptr, &data, sizeof(navaid_entry));
+
+			wpt.data.navaid = ptr;
+
+			add_to_wpt_cache(wpt);
+		}
 	}
 
 
@@ -230,6 +266,8 @@ namespace libnav
 	{
 		switch (navaid_type)
 		{
+		case NAV_WAYPOINT:
+			return "WPT";
 		case NAV_NDB:
 			return "NDB";
 		case NAV_ILS_LOC_ONLY:
@@ -251,17 +289,17 @@ namespace libnav
 		}
 	}
 
-	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p)
+	void sort_wpt_entry_by_dist(std::vector<waypoint_entry>* vec, geo::point p)
 	{
-		WaypointCompare comp;
+		WaypointEntryCompare comp;
 		comp.ac_pos = p;
 
 		sort(vec->begin(), vec->end(), comp);
 	}
 
-	void sort_navaids_by_dist(std::vector<navaid>* vec, geo::point p)
+	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p)
 	{
-		NavaidCompare comp;
+		WaypointCompare comp;
 		comp.ac_pos = p;
 
 		sort(vec->begin(), vec->end(), comp);

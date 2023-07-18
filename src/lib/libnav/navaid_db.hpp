@@ -16,6 +16,8 @@
 
 
 enum navaid_types {
+	NAV_NONE = 0,
+	NAV_WAYPOINT = 1,
 	NAV_NDB = 2,
 	NAV_VOR = 3,
 	NAV_ILS_LOC = 4,
@@ -33,23 +35,30 @@ namespace libnav
 {
 	struct navaid_entry
 	{
-		uint16_t type, max_recv;
-		geo::point pos;
-		double elevation, mag_var, freq;
+		uint16_t max_recv;
+		double elevation, freq;
 	};
 
-	struct navaid
+	struct waypoint_entry
 	{
-		std::string id;
-		navaid_entry data;
+		uint16_t type;
+		geo::point pos;
+		navaid_entry* navaid;
 	};
 
 	struct waypoint
 	{
 		std::string id;
-		geo::point pos;
+		waypoint_entry data;
 	};
 
+
+	class WaypointEntryCompare
+	{
+	public:
+		geo::point ac_pos; // Aircraft position
+		bool operator()(waypoint_entry w1, waypoint_entry w2);
+	};
 
 	class WaypointCompare
 	{
@@ -58,20 +67,12 @@ namespace libnav
 		bool operator()(waypoint w1, waypoint w2);
 	};
 
-	class NavaidCompare
-	{
-	public:
-		geo::point ac_pos; // Aircraft position
-		bool operator()(navaid n1, navaid n2);
-	};
-
 	class NavaidDB
 	{
 	public:
 
 		NavaidDB(std::string wpt_path, std::string navaid_path,
-			std::unordered_map<std::string, std::vector<geo::point>>* wpt_db,
-			std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_db);
+			std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db);
 
 		bool is_loaded();
 
@@ -81,15 +82,11 @@ namespace libnav
 
 		bool is_wpt(std::string id);
 
-		// get_wpt_info returns 0 if waypoint is not in the database. 
-		// Otherwise, returns number of items written to out.
-		size_t get_wpt_info(std::string id, std::vector<geo::point>* out);
+		bool is_navaid_of_type(std::string id, std::vector<int> types);
 
-		bool is_navaid(std::string id);
-
-		// get_navaid_info returns 0 if waypoint is not in the database. 
+		// get_wpt_data returns 0 if waypoint is not in the database. 
 		// Otherwise, returns number of items written to out.
-		size_t get_navaid_info(std::string id, std::vector<navaid_entry>* out);
+		size_t get_wpt_data(std::string id, std::vector<waypoint_entry>* out);
 
 		~NavaidDB();
 
@@ -105,14 +102,18 @@ namespace libnav
 		std::mutex wpt_db_mutex;
 		std::mutex navaid_db_mutex;
 
-		std::unordered_map<std::string, std::vector<geo::point>>* wpt_cache;
-		std::unordered_map<std::string, std::vector<navaid_entry>>* navaid_cache;
+		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_cache;
+
+		void add_to_wpt_cache(waypoint wpt);
+
+		void add_to_navaid_cache(waypoint wpt, navaid_entry data);
 	};
 
 
 	std::string navaid_to_str(int navaid_type);
+
+	void sort_wpt_entry_by_dist(std::vector<waypoint_entry>* vec, geo::point p);
 	
 	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p);
 
-	void sort_navaids_by_dist(std::vector<navaid>* vec, geo::point p);
 }
