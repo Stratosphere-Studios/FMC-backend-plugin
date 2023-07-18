@@ -18,6 +18,7 @@ enum FMS_constants
 std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0 };
 std::vector<double> double_dr_values = { 0, 0, 0, 0 };
 float sel_wpt_pos[3 * N_CDU_OUT_LINES];
+int sel_wpt_types[N_CDU_OUT_LINES];
 char nav_ref_in_icao[NAV_REF_ICAO_BUF_LENGTH];
 char nav_ref_out_icao[NAV_REF_ICAO_BUF_LENGTH];
 char scratchpad_msg[FMC_SCREEN_LINE_LENGTH];
@@ -40,7 +41,11 @@ std::vector<DRUtil::dref_d> double_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", false, nullptr}, &double_dr_values[3]}
 };
 
-std::vector<DRUtil::dref_fa> float_datarefs = {
+std::vector<DRUtil::dref_ia> int_arr_datarefs = {
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_types", false, nullptr}, sel_wpt_types, N_CDU_OUT_LINES}
+};
+
+std::vector<DRUtil::dref_fa> float_arr_datarefs = {
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", false, nullptr}, sel_wpt_pos, 3 * N_CDU_OUT_LINES}
 };
 
@@ -66,6 +71,7 @@ StratosphereAvionics::fmc_in_drs fmc_in = {
 										   {"Strato/777/FMC/FMC_R/REF_NAV/input_icao"},
 										   {"Strato/777/FMC/FMC_R/SEL_WPT/subpage",
 										    "Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx"},
+
 											"Strato/777/FMC/FMC_R/clear_msg",
 											"Strato/777/FMC/FMC_R/page"
 										  };
@@ -80,7 +86,9 @@ StratosphereAvionics::fmc_out_drs fmc_out = {
 
 											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
-											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_list"},
+											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_list",
+											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_types"},
+
 											  "Strato/777/FMC/FMC_R/scratchpad_msg"
 											};
 
@@ -105,11 +113,19 @@ int register_data_refs()
 		data_refs.push_back(e);
 	}
 
-	for (int i = 0; i < float_datarefs.size(); i++)
+	for (int i = 0; i < int_arr_datarefs.size(); i++)
 	{
-		float_datarefs.at(i).init();
-		XPDataBus::custom_data_ref_entry e = { float_datarefs.at(i).dr.name, {(void*)float_datarefs.at(i).array, 
-												xplmType_FloatArray, size_t(float_datarefs.at(i).n_length)} };
+		int_arr_datarefs.at(i).init();
+		XPDataBus::custom_data_ref_entry e = { int_arr_datarefs.at(i).dr.name, {(void*)int_arr_datarefs.at(i).array,
+												xplmType_IntArray, size_t(int_arr_datarefs.at(i).n_length)} };
+		data_refs.push_back(e);
+	}
+
+	for (int i = 0; i < float_arr_datarefs.size(); i++)
+	{
+		float_arr_datarefs.at(i).init();
+		XPDataBus::custom_data_ref_entry e = { float_arr_datarefs.at(i).dr.name, {(void*)float_arr_datarefs.at(i).array,
+												xplmType_FloatArray, size_t(float_arr_datarefs.at(i).n_length)} };
 		data_refs.push_back(e);
 	}
 
@@ -136,9 +152,14 @@ void unregister_data_refs()
 		double_datarefs.at(i).dr.unReg();
 	}
 
-	for (int i = 0; i < float_datarefs.size(); i++)
+	for (int i = 0; i < int_arr_datarefs.size(); i++)
 	{
-		float_datarefs.at(i).dr.unReg();
+		int_arr_datarefs.at(i).dr.unReg();
+	}
+
+	for (int i = 0; i < float_arr_datarefs.size(); i++)
+	{
+		float_arr_datarefs.at(i).dr.unReg();
 	}
 
 	for (int i = 0; i < str_datarefs.size(); i++)

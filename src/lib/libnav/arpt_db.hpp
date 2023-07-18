@@ -78,9 +78,6 @@ namespace libnav
 	};
 
 
-	//inline void sort_arpts_by_dist(std::vector<airport>* tile, double lat, double lon);
-
-
 	class ArptDB
 	{
 	public:
