@@ -12,6 +12,13 @@
 
 #define MSG_ADD_DATAREF 0x01000000
 
+enum dr_access
+{
+	DR_READONLY = false,
+	DR_WRITABLE = true
+};
+
+
 namespace DRUtil
 {
 	float regDRInDRE(float elapsedMe, float elapsedSim, int counter, void* ref);
