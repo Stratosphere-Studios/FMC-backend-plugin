@@ -91,6 +91,12 @@ namespace XPDataBus
 		return path;
 	}
 
+	void DataBus::add_to_mag_var_queue(geo_point point, std::promise<float>* prom)
+	{
+		std::lock_guard<std::mutex> lock(mag_var_queue_mutex);
+		mag_var_queue.push(mag_var_req{ point, prom });
+	}
+
 	void DataBus::add_to_get_queue(std::string dr_name, std::promise<generic_val>* prom, int offset)
 	{
 		std::lock_guard<std::mutex> lock(get_queue_mutex);
@@ -109,6 +115,14 @@ namespace XPDataBus
 			data_refs[*dr_name] = data_ref_entry{ ref_ptr, XPLMGetDataRefTypes(ref_ptr) };
 		}
 		return ref_ptr;
+	}
+
+	float DataBus::get_mag_var(double lat, double lon)
+	{
+		std::promise<float> prom;
+		std::future<float> fut_val = prom.get_future();
+		add_to_mag_var_queue(geo_point{ lat, lon }, &prom);
+		return fut_val.get();
 	}
 
 	generic_val DataBus::get_data(std::string dr_name, int offset)
@@ -459,6 +473,23 @@ namespace XPDataBus
 		return 0;
 	}
 
+	void DataBus::get_xplm_mag_var()
+	{
+		uint64_t counter = 0;
+		while (mag_var_queue.size() && counter < max_queue_refresh)
+		{
+			std::lock_guard<std::mutex> lock(mag_var_queue_mutex);
+			mag_var_req data = mag_var_queue.front();
+			mag_var_queue.pop();
+
+			float mag_var = XPLMGetMagneticVariation(data.point.lat, data.point.lon);
+
+			data.prom->set_value(mag_var);
+
+			counter++;
+		}
+	}
+
 	void DataBus::get_data_refs()
 	{
 		uint64_t counter = 0;
@@ -506,6 +537,7 @@ namespace XPDataBus
 		loop.callbackFunc = [](float elapsedMe, float elapsedSim, int counter, void* ref) -> float 
 								{
 									DataBus* ptr = reinterpret_cast<DataBus*>(ref);
+									ptr->get_xplm_mag_var();
 									ptr->get_data_refs();
 									ptr->set_data_refs();
 									return -1;

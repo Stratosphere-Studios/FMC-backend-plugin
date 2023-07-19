@@ -9,6 +9,7 @@
 #include "XPLMProcessing.h"
 #include "XPLMUtilities.h"
 #include "XPLMPlugin.h"
+#include "XPLMScenery.h"
 #include "common.hpp"
 #include <vector>
 #include <queue>
@@ -22,6 +23,17 @@ constexpr size_t CHAR_BUF_SIZE = 2048;
 
 namespace XPDataBus
 {
+	struct geo_point
+	{
+		double lat, lon;
+	};
+
+	struct mag_var_req
+	{
+		geo_point point;
+		std::promise<float>* prom;
+	};
+
 	struct get_req
 	{
 		std::string dref;
@@ -47,9 +59,12 @@ namespace XPDataBus
 		generic_ptr val;
 	};
 
+
 	class DataBus
 	{
 	public:
+		std::queue<mag_var_req> mag_var_queue;
+		std::mutex mag_var_queue_mutex;
 		std::queue<get_req> get_queue;
 		std::mutex get_queue_mutex;
 		std::queue<set_req> set_queue;
@@ -68,6 +83,8 @@ namespace XPDataBus
 		DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh);
 
 		//Ran from any thread:
+
+		float get_mag_var(double lat, double lon);
 
 		generic_val get_data(std::string dr_name, int offset=0);
 
@@ -91,6 +108,8 @@ namespace XPDataBus
 
 		//Ran from main thread only:
 
+		void get_xplm_mag_var();
+
 		void get_data_refs();
 		
 		void set_data_refs();
@@ -113,6 +132,8 @@ namespace XPDataBus
 		std::string get_apt_dat_path();
 
 		std::string get_default_data_path();
+
+		void add_to_mag_var_queue(geo_point point, std::promise<float>* prom);
 
 		void add_to_get_queue(std::string dr_name, std::promise<generic_val>* prom, int offset);
 
