@@ -2,6 +2,7 @@
 
 #include "arpt_db.hpp"
 #include "navaid_db.hpp"
+#include "common.hpp"
 
 
 enum POI_types

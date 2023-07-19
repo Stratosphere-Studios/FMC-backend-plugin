@@ -31,7 +31,7 @@ namespace StratosphereAvionics
 		// Initialize data bases
 
 		apt_db = new libnav::ArptDB(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
-		navaid_db = new libnav::NavaidDB(fix_path, navaid_path, &waypoints, &navaids);
+		navaid_db = new libnav::NavaidDB(fix_path, navaid_path, &waypoints);
 		nav_db = new libnav::NavDB(apt_db, navaid_db);
 	}
 
@@ -93,24 +93,17 @@ namespace StratosphereAvionics
 		return { ac_lat, ac_lon };
 	}
 
-	libnav::navaid_entry FMC::update_sel_navaid(std::string id,
-							   std::vector<libnav::navaid_entry>* vec) // Updates SELECT DESIRED WPT page for navaids
+	libnav::waypoint_entry FMC::update_sel_navaid(std::string id,
+							   std::vector<libnav::waypoint_entry> vec) // Updates SELECT DESIRED WPT page for navaids
 	{
-		int n_subpages = int(ceil(float(vec->size()) / float(N_CDU_OUT_LINES)));
+		int n_subpages = int(ceil(float(vec.size()) / float(N_CDU_OUT_LINES)));
 
 		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 1);
 		xp_databus->set_datai(out_drs.sel_desired_wpt.n_subpages, n_subpages);
 
-		std::vector<libnav::navaid> tmp;
-
-		for (size_t i = 0; i < vec->size(); i++)
-		{
-			tmp.push_back({ id, vec->at(i) });
-		}
-
 		geo::point ac_pos = get_ac_pos(); // Current aircraft position
 
-		libnav::sort_navaids_by_dist(&tmp, ac_pos);
+		libnav::sort_wpt_entry_by_dist(&vec, ac_pos);
 
 		int curr_subpage = xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page);
 		int subpage_prev = 0;
@@ -119,7 +112,7 @@ namespace StratosphereAvionics
 		
 		int user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
 
-		libnav::navaid_entry out_navaid = {0, 0, {0, 0}, 0, 0, 0};
+		libnav::waypoint_entry out_navaid{};
 
 		while ((user_idx == -1 || user_idx >= N_CDU_OUT_LINES) && !sim_shutdown.load(std::memory_order_relaxed))
 		{
@@ -133,19 +126,26 @@ namespace StratosphereAvionics
 			start_idx = (curr_subpage - 1) * N_CDU_OUT_LINES;
 
 			int n_navaids_displayed = N_CDU_OUT_LINES;
-			if (tmp.size() - start_idx < n_navaids_displayed)
+			if (vec.size() - start_idx < n_navaids_displayed)
 			{
-				n_navaids_displayed = int(tmp.size()) - start_idx;
+				n_navaids_displayed = int(vec.size()) - start_idx;
 			}
 
 			if (subpage_prev != curr_subpage)
 			{
 				for (int i = start_idx; i < start_idx + n_navaids_displayed; i++)
 				{
-					double poi_freq = tmp.at(i).data.freq / 100;
-					double poi_lat = tmp.at(i).data.pos.lat_deg;
-					double poi_lon = tmp.at(i).data.pos.lon_deg;
+					double poi_freq = 0;
+					double poi_lat = vec.at(i).pos.lat_deg;
+					double poi_lon = vec.at(i).pos.lon_deg;
 
+					// Make sure the pointer to navaid data isn't null.
+					if (vec.at(i).navaid) 
+					{
+						poi_freq = vec.at(i).navaid->freq;
+					}
+
+					xp_databus->set_datai(out_drs.sel_desired_wpt.poi_types, vec.at(i).type, i - start_idx);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_freq), (i - start_idx) * 3);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lat), (i - start_idx) * 3 + 1);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lon), (i - start_idx) * 3 + 2);
@@ -153,7 +153,7 @@ namespace StratosphereAvionics
 				subpage_prev = curr_subpage;
 			}
 
-			curr_subpage = xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page);
+			curr_subpage = libnav::clamp(xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page), n_subpages, 1);
 			user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
 		}
 
@@ -161,7 +161,7 @@ namespace StratosphereAvionics
 
 		if (user_idx != -1 && curr_subpage <= n_subpages)
 		{
-			return tmp.at(user_idx + start_idx).data;
+			return vec.at(user_idx + start_idx);
 		}
 
 		return out_navaid;
@@ -198,52 +198,61 @@ namespace StratosphereAvionics
 
 				dr_cache->set_val_s(in_drs.ref_nav.poi_id, icao);
 
-				int poi_type = nav_db->get_poi_type(icao);
-				xp_databus->set_datai(out_drs.ref_nav.poi_type, poi_type);
+				libnav::airport_data arpt_found{};
+				std::vector<libnav::waypoint_entry> wpts_found = {};
 
-				if (poi_type == POI_AIRPORT)
+				size_t n_arpts_found = nav_db->get_airport_data(icao, &arpt_found);
+				size_t n_wpts_found = nav_db->get_wpt_data(icao, &wpts_found);
+
+				if (n_arpts_found + n_wpts_found)
 				{
-					libnav::airport_data tmp = {};
-					size_t n_arpts_found = nav_db->get_airport_data(icao, &tmp);
-
-					xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
-					xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
-					xp_databus->set_datad(out_drs.ref_nav.poi_lat, tmp.pos.lat_deg);
-					xp_databus->set_datad(out_drs.ref_nav.poi_lon, tmp.pos.lon_deg);
-					xp_databus->set_datad(out_drs.ref_nav.poi_elevation, double(tmp.elevation_ft));
-				}
-				else if (poi_type == POI_NAVAID)
-				{
-					std::vector<libnav::navaid_entry> tmp = {};
-					size_t n_navaids_found = nav_db->get_navaid_info(icao, &tmp);
-					libnav::navaid_entry selected_navaid{};
-
 					xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
 					xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
 
-					if (n_navaids_found > 1)
+					double poi_lat, poi_lon;
+
+					if (n_arpts_found)
 					{
-						selected_navaid = update_sel_navaid(icao, &tmp);
-						if (selected_navaid.max_recv == 0)
+						xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_AIRPORT);
+						poi_lat = arpt_found.pos.lat_deg;
+						poi_lon = arpt_found.pos.lon_deg;
+						
+						xp_databus->set_datad(out_drs.ref_nav.poi_elevation, double(arpt_found.elevation_ft));
+					}
+					else
+					{
+						libnav::waypoint_entry curr_wpt = wpts_found.at(0);
+
+						if (n_wpts_found > 1)
+						{
+							curr_wpt = update_sel_navaid(icao, wpts_found);
+
+							reset_sel_navaid();
+						}
+
+						if (curr_wpt.type == NAV_NONE)
 						{
 							break;
 						}
-						reset_sel_navaid();
+						else if (curr_wpt.type == NAV_WAYPOINT)
+						{
+							xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_WAYPOINT);
+						}
+						else
+						{
+							xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_NAVAID);
+							xp_databus->set_datad(out_drs.ref_nav.poi_freq, curr_wpt.navaid->freq);
+						}
+
+						poi_lat = curr_wpt.pos.lat_deg;
+						poi_lon = curr_wpt.pos.lon_deg;
 					}
 
-					xp_databus->set_datad(out_drs.ref_nav.poi_lat, selected_navaid.pos.lat_deg);
-					xp_databus->set_datad(out_drs.ref_nav.poi_lon, selected_navaid.pos.lon_deg);
-					xp_databus->set_datad(out_drs.ref_nav.poi_freq, selected_navaid.freq);
-				}
-				else if (poi_type == POI_WAYPOINT)
-				{
-					std::vector<geo::point> tmp = {};
-					size_t n_waypoints_found = nav_db->get_wpt_info(icao, &tmp);
+					double mag_var = xp_databus->get_mag_var(poi_lat, poi_lon);
 
-					xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
-					xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
-					xp_databus->set_datad(out_drs.ref_nav.poi_lat, tmp[0].lat_deg);
-					xp_databus->set_datad(out_drs.ref_nav.poi_lon, tmp[0].lon_deg);
+					xp_databus->set_datad(out_drs.ref_nav.poi_lat, poi_lat);
+					xp_databus->set_datad(out_drs.ref_nav.poi_lon, poi_lon);
+					xp_databus->set_datad(out_drs.ref_nav.poi_mag_var, mag_var);
 				}
 				else
 				{
@@ -263,6 +272,7 @@ namespace StratosphereAvionics
 		xp_databus->set_datad(out_drs.ref_nav.poi_lon, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_elevation, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_freq, -1);
+		xp_databus->set_datad(out_drs.ref_nav.poi_mag_var, 0);
 	}
 
 	void FMC::update_scratch_msg()

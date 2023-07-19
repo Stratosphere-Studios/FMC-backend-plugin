@@ -31,7 +31,7 @@ namespace StratosphereAvionics
 	struct fmc_ref_nav_out_drs
 	{
 		std::string poi_id, poi_type, poi_lat, poi_lon, poi_elevation,
-			poi_freq;
+			poi_freq, poi_mag_var;
 	};
 
 	struct fmc_sel_desired_wpt_in_drs
@@ -41,7 +41,7 @@ namespace StratosphereAvionics
 
 	struct fmc_sel_desired_wpt_out_drs
 	{
-		std::string is_active, n_subpages, poi_list;
+		std::string is_active, n_subpages, poi_list, poi_types;
 	};
 
 	struct fmc_in_drs
@@ -80,9 +80,7 @@ namespace StratosphereAvionics
 
 		std::shared_ptr<XPDataBus::DataBus> xp_databus;
 
-		std::unordered_map<std::string, std::vector<libnav::navaid_entry>> navaids;
-		std::unordered_map<std::string, std::vector<geo::point>> waypoints;
-
+		std::unordered_map<std::string, std::vector<libnav::waypoint_entry>> waypoints;
 		std::unordered_map<std::string, libnav::airport_data> airports;
 		std::unordered_map<std::string, libnav::runway_data> runways;
 
@@ -113,8 +111,8 @@ namespace StratosphereAvionics
 
 		geo::point get_ac_pos();
 
-		libnav::navaid_entry update_sel_navaid(std::string id,
-							  std::vector<libnav::navaid_entry>* vec); // Updates SELECT DESIRED WPT page for navaids
+		libnav::waypoint_entry update_sel_navaid(std::string id,
+							  std::vector<libnav::waypoint_entry> vec); // Updates SELECT DESIRED WPT page for navaids
 
 		void reset_sel_navaid();
 
