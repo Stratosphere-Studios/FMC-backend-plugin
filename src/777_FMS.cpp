@@ -16,7 +16,7 @@ enum FMS_constants
 #endif
 
 std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0 };
-std::vector<double> double_dr_values = { 0, 0, 0, 0 };
+std::vector<double> double_dr_values = { 0, 0, 0, 0, 0 };
 float sel_wpt_pos[3 * N_CDU_OUT_LINES];
 int sel_wpt_types[N_CDU_OUT_LINES];
 char nav_ref_in_icao[NAV_REF_ICAO_BUF_LENGTH];
@@ -24,35 +24,36 @@ char nav_ref_out_icao[NAV_REF_ICAO_BUF_LENGTH];
 char scratchpad_msg[FMC_SCREEN_LINE_LENGTH];
 
 std::vector<DRUtil::dref_i> int_datarefs = {
-	{{"Strato/777/UI/messages/creating_databases", false, nullptr}, &int_dr_values[0]},
-	{{"Strato/777/FMC/FMC_R/clear_msg", true, nullptr}, &int_dr_values[1]},
-	{{"Strato/777/FMC/FMC_R/page", true, nullptr}, &int_dr_values[2]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", true, nullptr}, &int_dr_values[3]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", true, nullptr}, &int_dr_values[4]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", true, nullptr}, &int_dr_values[5]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", false, nullptr}, &int_dr_values[6]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", true, nullptr},& int_dr_values[7]}
+	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, nullptr}, &int_dr_values[0]},
+	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, nullptr}, &int_dr_values[1]},
+	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, nullptr}, &int_dr_values[2]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, nullptr}, &int_dr_values[3]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, nullptr}, &int_dr_values[4]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, nullptr}, &int_dr_values[5]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, nullptr}, &int_dr_values[6]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, nullptr},& int_dr_values[7]}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", false, nullptr}, &double_dr_values[0]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", false, nullptr}, &double_dr_values[1]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", false, nullptr}, &double_dr_values[2]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", false, nullptr}, &double_dr_values[3]}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, nullptr}, &double_dr_values[0]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, nullptr}, &double_dr_values[1]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, nullptr}, &double_dr_values[2]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, nullptr}, &double_dr_values[3]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var", DR_READONLY, nullptr}, &double_dr_values[4]}
 };
 
 std::vector<DRUtil::dref_ia> int_arr_datarefs = {
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_types", false, nullptr}, sel_wpt_types, N_CDU_OUT_LINES}
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_types", DR_READONLY, nullptr}, sel_wpt_types, N_CDU_OUT_LINES}
 };
 
 std::vector<DRUtil::dref_fa> float_arr_datarefs = {
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", false, nullptr}, sel_wpt_pos, 3 * N_CDU_OUT_LINES}
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", DR_READONLY, nullptr}, sel_wpt_pos, 3 * N_CDU_OUT_LINES}
 };
 
 std::vector<DRUtil::dref_s> str_datarefs = {
-	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", true, nullptr}, nav_ref_in_icao, NAV_REF_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", false, nullptr}, nav_ref_out_icao, NAV_REF_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/scratchpad_msg", false, nullptr}, scratchpad_msg, FMC_SCREEN_LINE_LENGTH}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", DR_WRITABLE, nullptr}, nav_ref_in_icao, NAV_REF_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", DR_READONLY, nullptr}, nav_ref_out_icao, NAV_REF_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/scratchpad_msg", DR_READONLY, nullptr}, scratchpad_msg, FMC_SCREEN_LINE_LENGTH}
 };
 
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
@@ -82,7 +83,8 @@ StratosphereAvionics::fmc_out_drs fmc_out = {
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lat",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lon",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_elev",
-											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq"},
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var"},
 
 											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
