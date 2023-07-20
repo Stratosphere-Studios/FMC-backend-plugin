@@ -47,6 +47,8 @@ namespace libnav
 
 		size_t get_wpt_data(std::string id, std::vector<waypoint_entry>* out);
 
+		bool is_navaid_of_type(std::string id, std::vector<int> types);
+
 	private:
 		ArptDB* arpt_db;
 		NavaidDB* navaid_db;

@@ -132,9 +132,9 @@ namespace libnav
 
 	bool NavaidDB::is_navaid_of_type(std::string id, std::vector<int> types)
 	{
-		std::lock_guard<std::mutex> lock(wpt_db_mutex);
 		if (is_wpt(id))
 		{
+			std::lock_guard<std::mutex> lock(wpt_db_mutex);
 			uint16_t arr[NAV_ILS_DME];
 			for (int i = 0; i < types.size(); i++)
 			{

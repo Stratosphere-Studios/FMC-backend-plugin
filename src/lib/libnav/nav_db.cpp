@@ -32,4 +32,9 @@ namespace libnav
 	{
 		return navaid_db->get_wpt_data(id, out);
 	}
+
+	bool NavDB::is_navaid_of_type(std::string id, std::vector<int> types)
+	{
+		return navaid_db->is_navaid_of_type(id, types);
+	}
 }
