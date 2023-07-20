@@ -14,9 +14,13 @@ namespace XPDataBus
 
 		generic_val get_val(std::string dr_name);
 
+		int get_val_i(std::string dr_name);
+
 		std::string get_val_s(std::string dr_name);
 
 		void set_val(std::string dr_name, generic_val val);
+
+		void set_val_i(std::string dr_name, int in);
 
 		void set_val_s(std::string dr_name, std::string in);
 	private:
