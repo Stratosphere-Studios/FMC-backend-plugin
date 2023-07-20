@@ -7,21 +7,42 @@ enum FMS_constants
 {
 	N_MAX_DATABUS_QUEUE_PROC = 1024,
 	N_CUSTOM_STR_DR_LENGTH = 2048,
-	NAV_REF_ICAO_BUF_LENGTH = 5,
-	FMC_SCREEN_LINE_LENGTH = 24
+	REF_NAV_ICAO_BUF_LENGTH = 5,
+	FMC_SCREEN_LINE_LENGTH = 24,
+	N_REF_NAV_MAG_VAR_BUF_LENGTH = 4,
+	N_REF_NAV_NAVAID_BUF_LENGTH = 4
 };
 
 #ifndef XPLM400
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0 };
-std::vector<double> double_dr_values = { 0, 0, 0, 0, 0 };
+std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0, 0 };
+std::vector<double> double_dr_values = { 0, 0, 0, 0 };
+
+char ref_nav_in_icao[REF_NAV_ICAO_BUF_LENGTH];
+char ref_nav_out_icao[REF_NAV_ICAO_BUF_LENGTH];
+char ref_nav_out_mag_var[N_REF_NAV_MAG_VAR_BUF_LENGTH];
+char ref_nav_in_navaid1[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_out_navaid1[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_in_navaid2[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_out_navaid2[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_in_vor1[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_out_vor1[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_in_vor2[N_REF_NAV_NAVAID_BUF_LENGTH];
+char ref_nav_out_vor2[N_REF_NAV_NAVAID_BUF_LENGTH];
+
 float sel_wpt_pos[3 * N_CDU_OUT_LINES];
 int sel_wpt_types[N_CDU_OUT_LINES];
-char nav_ref_in_icao[NAV_REF_ICAO_BUF_LENGTH];
-char nav_ref_out_icao[NAV_REF_ICAO_BUF_LENGTH];
+char sel_wpt_type_1[FMC_SCREEN_LINE_LENGTH];
+char sel_wpt_type_2[FMC_SCREEN_LINE_LENGTH];
+char sel_wpt_type_3[FMC_SCREEN_LINE_LENGTH];
+char sel_wpt_type_4[FMC_SCREEN_LINE_LENGTH];
+char sel_wpt_type_5[FMC_SCREEN_LINE_LENGTH];
+char sel_wpt_type_6[FMC_SCREEN_LINE_LENGTH];
+
 char scratchpad_msg[FMC_SCREEN_LINE_LENGTH];
+
 
 std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, nullptr}, &int_dr_values[0]},
@@ -31,15 +52,15 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, nullptr}, &int_dr_values[4]},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, nullptr}, &int_dr_values[5]},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, nullptr}, &int_dr_values[6]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, nullptr},& int_dr_values[7]}
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, nullptr}, &int_dr_values[7]},
+	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, nullptr},&int_dr_values[8]}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, nullptr}, &double_dr_values[0]},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, nullptr}, &double_dr_values[1]},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, nullptr}, &double_dr_values[2]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, nullptr}, &double_dr_values[3]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var", DR_READONLY, nullptr}, &double_dr_values[4]}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, nullptr}, &double_dr_values[3]}
 };
 
 std::vector<DRUtil::dref_ia> int_arr_datarefs = {
@@ -51,8 +72,25 @@ std::vector<DRUtil::dref_fa> float_arr_datarefs = {
 };
 
 std::vector<DRUtil::dref_s> str_datarefs = {
-	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", DR_WRITABLE, nullptr}, nav_ref_in_icao, NAV_REF_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", DR_READONLY, nullptr}, nav_ref_out_icao, NAV_REF_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", DR_WRITABLE, nullptr}, ref_nav_in_icao, REF_NAV_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", DR_READONLY, nullptr}, ref_nav_out_icao, REF_NAV_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var", DR_READONLY, nullptr}, ref_nav_out_mag_var, N_REF_NAV_MAG_VAR_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_1_in", DR_WRITABLE, nullptr}, ref_nav_in_navaid1, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/navaid_1_out", DR_READONLY, nullptr}, ref_nav_out_navaid1, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_2_in", DR_WRITABLE, nullptr}, ref_nav_in_navaid2, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/navaid_2_out", DR_READONLY, nullptr}, ref_nav_out_navaid2, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_1_in", DR_WRITABLE, nullptr}, ref_nav_in_vor1, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/vor_1_out", DR_READONLY, nullptr}, ref_nav_out_vor1, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_2_in", DR_WRITABLE, nullptr}, ref_nav_in_vor2, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/vor_2_out", DR_READONLY, nullptr}, ref_nav_out_vor2, N_REF_NAV_NAVAID_BUF_LENGTH},
+
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi1_type", DR_READONLY, nullptr}, sel_wpt_type_1, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi2_type", DR_READONLY, nullptr}, sel_wpt_type_2, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi3_type", DR_READONLY, nullptr}, sel_wpt_type_3, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi4_type", DR_READONLY, nullptr}, sel_wpt_type_4, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi5_type", DR_READONLY, nullptr}, sel_wpt_type_5, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi6_type", DR_READONLY, nullptr}, sel_wpt_type_6, FMC_SCREEN_LINE_LENGTH},
+
 	{{"Strato/777/FMC/FMC_R/scratchpad_msg", DR_READONLY, nullptr}, scratchpad_msg, FMC_SCREEN_LINE_LENGTH}
 };
 
@@ -61,15 +99,20 @@ std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
 std::shared_ptr<XPDataBus::DataBus> sim_databus;
 std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
-std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
+std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<std::thread> avionics_thread;
-std::shared_ptr<std::thread> fmc_thread;
+std::shared_ptr<std::thread> fmc_r_thread;
 
-StratosphereAvionics::fmc_in_drs fmc_in = { 
+StratosphereAvionics::fmc_in_drs fmc_r_in = { 
 											"sim/flightmodel/position/latitude",
 											"sim/flightmodel/position/longitude",
 
-										   {"Strato/777/FMC/FMC_R/REF_NAV/input_icao"},
+										   {"Strato/777/FMC/FMC_R/REF_NAV/input_icao",
+											"Strato/777/FMC/REF_NAV/rad_nav_inh",
+										    {"Strato/777/FMC/FMC_R/REF_NAV/navaid_1_in",
+											 "Strato/777/FMC/FMC_R/REF_NAV/navaid_2_in"},
+											{"Strato/777/FMC/FMC_R/REF_NAV/vor_1_in",
+											 "Strato/777/FMC/FMC_R/REF_NAV/vor_2_in"}},
 										   {"Strato/777/FMC/FMC_R/SEL_WPT/subpage",
 										    "Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx"},
 
@@ -77,7 +120,7 @@ StratosphereAvionics::fmc_in_drs fmc_in = {
 											"Strato/777/FMC/FMC_R/page"
 										  };
 
-StratosphereAvionics::fmc_out_drs fmc_out = { 
+StratosphereAvionics::fmc_out_drs fmc_r_out = { 
 											 {"Strato/777/FMC/FMC_R/REF_NAV/out_icao",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_type",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lat",
@@ -89,7 +132,12 @@ StratosphereAvionics::fmc_out_drs fmc_out = {
 											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_list",
-											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_types"},
+											  {"Strato/777/FMC/FMC_R/SEL_WPT/poi1_type",
+											   "Strato/777/FMC/FMC_R/SEL_WPT/poi2_type",
+											   "Strato/777/FMC/FMC_R/SEL_WPT/poi3_type",
+											   "Strato/777/FMC/FMC_R/SEL_WPT/poi4_type",
+											   "Strato/777/FMC/FMC_R/SEL_WPT/poi5_type",
+											   "Strato/777/FMC/FMC_R/SEL_WPT/poi6_type"}},
 
 											  "Strato/777/FMC/FMC_R/scratchpad_msg"
 											};
@@ -174,14 +222,14 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 {
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus);
-	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, &fmc_in, &fmc_out);
+	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, &fmc_r_in, &fmc_r_out);
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
 			avionics->main_loop();
 		});
-	fmc_thread = std::make_shared<std::thread>([]()
+	fmc_r_thread = std::make_shared<std::thread>([]()
 		{
-			fmc_l->main_loop();
+			fmc_r->main_loop();
 		});
 	return 0;
 }
@@ -210,12 +258,12 @@ PLUGIN_API void	XPluginStop(void)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
 		avionics->sim_shutdown.store(true, std::memory_order_relaxed);
-		fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
+		fmc_r->sim_shutdown.store(true, std::memory_order_relaxed);
 		sim_databus->cleanup();
-		fmc_thread->join();
+		fmc_r_thread->join();
 		avionics_thread->join();
 		unregister_data_refs();
-		fmc_thread.reset();
+		fmc_r_thread.reset();
 		avionics.reset();
 		sim_databus.reset();
 		XPLMDebugString("777_FMS: Successfully disabled.\n");
