@@ -10,6 +10,7 @@ namespace XPDataBus
 
 	generic_val DataRefCache::get_val(std::string dr_name)
 	{
+		std::lock_guard<std::mutex> lock(dr_cache_mutex);
 		generic_val tmp = { {0}, "", xplmType_Unknown, 0 };
 		if (cache.find(dr_name) != cache.end())
 		{
@@ -26,6 +27,7 @@ namespace XPDataBus
 
 	void DataRefCache::set_val(std::string dr_name, generic_val val)
 	{
+		std::lock_guard<std::mutex> lock(dr_cache_mutex);
 		if (cache.find(dr_name) != cache.end())
 		{
 			cache[dr_name] = val;

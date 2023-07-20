@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include <unordered_map>
+#include <mutex>
 
 
 namespace XPDataBus
@@ -20,5 +21,7 @@ namespace XPDataBus
 		void set_val_s(std::string dr_name, std::string in);
 	private:
 		std::unordered_map<std::string, generic_val> cache;
+
+		std::mutex dr_cache_mutex;
 	};
 }

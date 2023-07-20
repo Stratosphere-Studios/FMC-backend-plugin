@@ -320,7 +320,7 @@ namespace XPDataBus
 		{
 			out->val_type = xplmType_Data;
 			char* data = reinterpret_cast<char*>(ptr.ptr);
-			for (int i = offset; i < ptr.n_length; i++)
+			for (int i = offset; i < ptr.n_length && data[i]; i++)
 			{
 				out->str.push_back(data[i]);
 			}
