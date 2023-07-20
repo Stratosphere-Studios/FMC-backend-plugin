@@ -25,7 +25,10 @@ namespace StratosphereAvionics
 {
 	struct fmc_ref_nav_in_drs
 	{
-		std::string poi_id;
+		std::string poi_id, rad_nav_inh;
+
+		std::vector<std::string> in_navaids;
+		std::vector<std::string> in_vors;
 	};
 
 	struct fmc_ref_nav_out_drs
@@ -41,7 +44,9 @@ namespace StratosphereAvionics
 
 	struct fmc_sel_desired_wpt_out_drs
 	{
-		std::string is_active, n_subpages, poi_list, poi_types;
+		std::string is_active, n_subpages, poi_list;
+
+		std::vector<std::string> poi_types;
 	};
 
 	struct fmc_in_drs
@@ -76,7 +81,7 @@ namespace StratosphereAvionics
 		std::string sim_apt_path;
 		std::string default_data_path;
 		int xplane_version;
-		std::atomic<bool> sim_shutdown{false};
+		std::atomic<bool> sim_shutdown{ false };
 
 		std::shared_ptr<XPDataBus::DataBus> xp_databus;
 
@@ -90,6 +95,10 @@ namespace StratosphereAvionics
 
 		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus);
 
+		void excl_navaid(std::string id, int idx);
+
+		void excl_vor(std::string id, int idx);
+
 		void update_sys();
 
 		void main_loop();
@@ -97,7 +106,13 @@ namespace StratosphereAvionics
 		~AvionicsSys();
 
 	private:
+		std::mutex navaid_inhibit_mutex;
+		std::mutex vor_inhibit_mutex;
+
 		std::string icao_entry_last;
+
+		std::vector<std::string> navaid_inhibit = { "", "" };
+		std::vector<std::string> vor_inhibit = { "", "" };
 
 		void update_load_status();
 	};
@@ -111,10 +126,16 @@ namespace StratosphereAvionics
 
 		geo::point get_ac_pos();
 
-		libnav::waypoint_entry update_sel_navaid(std::string id,
+		libnav::waypoint_entry update_sel_des_wpt(std::string id,
 							  std::vector<libnav::waypoint_entry> vec); // Updates SELECT DESIRED WPT page for navaids
 
 		void reset_sel_navaid();
+
+		int update_ref_nav_poi_data(size_t n_arpts_found, size_t n_wpts_found, std::string icao,
+									libnav::airport_data arpt_found, std::vector<libnav::waypoint_entry> wpts_found);
+
+		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
+									int threshold, bool add_vor);
 
 		void update_ref_nav(); // Updates REF NAV DATA page
 
