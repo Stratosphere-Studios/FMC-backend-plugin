@@ -118,4 +118,21 @@ namespace strutils
 
 		return s;
 	}
+
+	/*
+		Converts magnetic variation value in degrees to Boeing-style notation
+	*/
+
+	inline std::string mag_var_to_str(double mag_var_deg)
+	{
+		int mag_var_rnd = int(round(mag_var_deg));
+		int mag_var = ((mag_var_rnd) + 360) % 360;
+		std::string str_mag_var = std::to_string(abs(mag_var_rnd));
+		
+		if (mag_var < 180)
+		{
+			return "E" + str_mag_var;
+		}
+		return "W" + str_mag_var;
+	}
 }
