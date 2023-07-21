@@ -82,7 +82,7 @@ namespace XPDataBus
 
 		DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh);
 
-		//Ran from any thread:
+		// Ran from any thread:
 
 		float get_mag_var(double lat, double lon);
 
@@ -106,7 +106,7 @@ namespace XPDataBus
 
 		void set_data_s(std::string dr_name, std::string in, int offset=0);
 
-		//Ran from main thread only:
+		// Ran from main thread only:
 
 		void get_xplm_mag_var();
 
@@ -122,8 +122,8 @@ namespace XPDataBus
 		
 	private:
 		XPLMFlightLoopID flt_loop_id;
-		std::unordered_map<std::string, data_ref_entry> data_refs; //Datarefs not owned by this plugin
-		std::unordered_map<std::string, generic_ptr> custom_data_refs; //Datarefs owned by this plugin
+		std::unordered_map<std::string, data_ref_entry> data_refs; // Datarefs not owned by this plugin
+		std::unordered_map<std::string, generic_ptr> custom_data_refs; // Datarefs owned by this plugin
 
 		std::string get_xplane_path();
 
@@ -139,7 +139,7 @@ namespace XPDataBus
 
 		XPLMDataRef add_data_ref_entry(std::string* dr_name);
 
-		//The get_ functions below return number of data items returned
+		// The get_ functions below return number of data items returned
 
 		int get_data_ref_value(std::string* dr_name, generic_val* out);
 
