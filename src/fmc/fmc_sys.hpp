@@ -23,6 +23,12 @@ enum fmc_pages
 
 namespace StratosphereAvionics
 {
+	struct avionics_out_drs
+	{
+		std::vector<std::string> excl_navaids;
+		std::vector<std::string> excl_vors;
+	};
+
 	struct fmc_ref_nav_in_drs
 	{
 		std::string poi_id, rad_nav_inh;
@@ -44,7 +50,7 @@ namespace StratosphereAvionics
 
 	struct fmc_sel_desired_wpt_out_drs
 	{
-		std::string is_active, n_subpages, poi_list;
+		std::string is_active, n_subpages, n_pois, poi_list;
 
 		std::vector<std::string> poi_types;
 	};
@@ -93,7 +99,7 @@ namespace StratosphereAvionics
 		libnav::NavaidDB* navaid_db;
 		libnav::NavDB* nav_db;
 
-		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus);
+		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out);
 
 		void excl_navaid(std::string id, int idx);
 
@@ -106,6 +112,8 @@ namespace StratosphereAvionics
 		~AvionicsSys();
 
 	private:
+		avionics_out_drs out_drs;
+
 		std::mutex navaid_inhibit_mutex;
 		std::mutex vor_inhibit_mutex;
 
@@ -122,7 +130,7 @@ namespace StratosphereAvionics
 	public:
 		std::atomic<bool> sim_shutdown{ false };
 
-		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs* in, fmc_out_drs* out);
+		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out);
 
 		geo::point get_ac_pos();
 
@@ -146,6 +154,7 @@ namespace StratosphereAvionics
 		void main_loop();
 
 		~FMC();
+
 	private:
 		libnav::NavDB* nav_db;
 		std::shared_ptr<AvionicsSys> avionics;

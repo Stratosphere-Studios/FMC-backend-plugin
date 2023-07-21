@@ -14,6 +14,7 @@ namespace StratosphereAvionics
 
 		int curr_subpage = 1;
 		int subpage_prev = 0;
+		int n_navaids_displayed = N_CDU_OUT_LINES;
 
 		int start_idx = 0;
 
@@ -21,7 +22,7 @@ namespace StratosphereAvionics
 
 		libnav::waypoint_entry out_navaid{};
 
-		while ((user_idx == -1 || user_idx >= N_CDU_OUT_LINES) && !sim_shutdown.load(std::memory_order_relaxed))
+		while ((user_idx < 0 || user_idx >= n_navaids_displayed) && !sim_shutdown.load(std::memory_order_relaxed))
 		{
 			// If user decides to leave this page, reset and exit
 			if (!xp_databus->get_datai(out_drs.sel_desired_wpt.is_active))
@@ -29,17 +30,19 @@ namespace StratosphereAvionics
 				return out_navaid;
 			}
 
-			// Wait until user has selected a valid waypoint
-			start_idx = (curr_subpage - 1) * N_CDU_OUT_LINES;
-
-			int n_navaids_displayed = N_CDU_OUT_LINES;
-			if (vec.size() - start_idx < n_navaids_displayed)
-			{
-				n_navaids_displayed = int(vec.size()) - start_idx;
-			}
-
 			if (subpage_prev != curr_subpage)
 			{
+				// Wait until user has selected a valid waypoint
+				start_idx = (curr_subpage - 1) * N_CDU_OUT_LINES;
+
+				n_navaids_displayed = N_CDU_OUT_LINES;
+				if (vec.size() - start_idx < n_navaids_displayed)
+				{
+					n_navaids_displayed = int(vec.size()) - start_idx;
+				}
+
+				xp_databus->set_datai(out_drs.sel_desired_wpt.n_pois, n_navaids_displayed);
+
 				for (int i = start_idx; i < start_idx + n_navaids_displayed; i++)
 				{
 					double poi_freq = 0;
@@ -70,6 +73,7 @@ namespace StratosphereAvionics
 
 		if (user_idx != -1 && curr_subpage <= n_subpages)
 		{
+
 			return vec.at(user_idx + start_idx);
 		}
 

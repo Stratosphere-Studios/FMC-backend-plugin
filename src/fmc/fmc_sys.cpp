@@ -13,8 +13,10 @@ namespace StratosphereAvionics
 {
 	// AvionicsSys definitions
 
-	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus)
+	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out)
 	{
+		out_drs = out;
+
 		xp_databus = databus;
 		strcpy_safe(path_sep, 2, xp_databus->path_sep); // Update path separator
 		xplane_path = xp_databus->xplane_path;
@@ -44,6 +46,7 @@ namespace StratosphereAvionics
 		if (idx >= 0 && idx < navaid_inhibit.size())
 		{
 			navaid_inhibit[idx] = id;
+			xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
 		}
 	}
 
@@ -53,6 +56,7 @@ namespace StratosphereAvionics
 		if (idx >= 0 && idx < vor_inhibit.size())
 		{
 			vor_inhibit[idx] = id;
+			xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
 		}
 	}
 
@@ -94,12 +98,12 @@ namespace StratosphereAvionics
 
 	// FMC definitions:
 
-	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs* in, fmc_out_drs* out)
+	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out)
 	{
 		avionics = av;
 		nav_db = avionics->nav_db;
-		memcpy(&in_drs, in, sizeof(fmc_in_drs));
-		memcpy(&out_drs, out, sizeof(fmc_out_drs));
+		in_drs = in;
+		out_drs = out;
 
 		xp_databus = avionics->xp_databus;
 
