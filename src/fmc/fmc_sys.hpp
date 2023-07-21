@@ -122,6 +122,8 @@ namespace StratosphereAvionics
 		std::vector<std::string> navaid_inhibit = { "", "" };
 		std::vector<std::string> vor_inhibit = { "", "" };
 
+		XPDataBus::DataRefCache* dr_cache;
+
 		void update_load_status();
 	};
 
@@ -141,6 +143,8 @@ namespace StratosphereAvionics
 
 		int update_ref_nav_poi_data(size_t n_arpts_found, size_t n_wpts_found, std::string icao,
 									libnav::airport_data arpt_found, std::vector<libnav::waypoint_entry> wpts_found);
+
+		void reset_ref_nav_poi_data(std::vector<std::string>* nav_drs);
 
 		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
 									int threshold, bool add_vor);

@@ -69,8 +69,11 @@ namespace StratosphereAvionics
 		for (int i = 0; i < nav_drs->size(); i++)
 		{
 			std::string curr_dr_name = nav_drs->at(i);
-			std::string entry_curr = xp_databus->get_data_s(curr_dr_name);
+			std::string tmp = xp_databus->get_data_s(curr_dr_name);
+			std::string entry_curr;
 			std::string entry_last = dr_cache->get_val_s(curr_dr_name);
+
+			strip_str(&tmp, &entry_curr);
 
 			if (entry_curr != entry_last)
 			{
@@ -101,18 +104,27 @@ namespace StratosphereAvionics
 						xp_databus->set_data_s(out_drs.scratchpad_msg, "INVALID ENTRY");
 					}
 				}
-			}
-			else
-			{
-				int inh_curr = xp_databus->get_datai(in_drs.ref_nav.rad_nav_inh);
-				int inh_last = dr_cache->get_val_i(in_drs.ref_nav.rad_nav_inh);
-
-				if (inh_curr != inh_last)
+				else
 				{
-					dr_cache->set_val_i(in_drs.ref_nav.rad_nav_inh, inh_curr);
-					xp_databus->set_data_s(curr_dr_name, " ", -1);
+					if (add_vor)
+					{
+						avionics->excl_vor(entry_curr, i);
+					}
+					else
+					{
+						avionics->excl_navaid(entry_curr, i);
+					}
 				}
 			}
+		}
+	}
+
+	void FMC::reset_ref_nav_poi_data(std::vector<std::string>* nav_drs)
+	{
+		for (int i = 0; i < nav_drs->size(); i++)
+		{
+			std::string curr_dr = nav_drs->at(i);
+			xp_databus->set_data_s(curr_dr, " ", -1);
 		}
 	}
 
@@ -161,6 +173,16 @@ namespace StratosphereAvionics
 
 			update_ref_nav_inhibit(&in_drs.ref_nav.in_navaids, { NAV_DME, NAV_DME_ONLY, NAV_VOR, NAV_VOR_DME }, RAD_NAV_INHIBIT, false);
 			update_ref_nav_inhibit(&in_drs.ref_nav.in_vors, { NAV_VOR, NAV_VOR_DME }, RAD_NAV_VOR_ONLY_INHIBIT, true);
+
+			int inh_curr = xp_databus->get_datai(in_drs.ref_nav.rad_nav_inh);
+			int inh_last = dr_cache->get_val_i(in_drs.ref_nav.rad_nav_inh);
+
+			if (inh_curr != inh_last)
+			{
+				dr_cache->set_val_i(in_drs.ref_nav.rad_nav_inh, inh_curr);
+				reset_ref_nav_poi_data(&in_drs.ref_nav.in_navaids);
+				reset_ref_nav_poi_data(&in_drs.ref_nav.in_vors);
+			}
 
 			update_scratch_msg();
 		}

@@ -13,6 +13,8 @@ namespace StratosphereAvionics
 {
 	// AvionicsSys definitions
 
+	// Public member functions:
+
 	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out)
 	{
 		out_drs = out;
@@ -38,6 +40,8 @@ namespace StratosphereAvionics
 		apt_db = new libnav::ArptDB(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
 		navaid_db = new libnav::NavaidDB(fix_path, navaid_path, &waypoints);
 		nav_db = new libnav::NavDB(apt_db, navaid_db);
+
+		dr_cache = new XPDataBus::DataRefCache();
 	}
 
 	void AvionicsSys::excl_navaid(std::string id, int idx)
@@ -46,7 +50,14 @@ namespace StratosphereAvionics
 		if (idx >= 0 && idx < navaid_inhibit.size())
 		{
 			navaid_inhibit[idx] = id;
-			xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
+			if (id != "")
+			{
+				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
+			}
+			else
+			{
+				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), " ", -1);
+			}
 		}
 	}
 
@@ -56,19 +67,26 @@ namespace StratosphereAvionics
 		if (idx >= 0 && idx < vor_inhibit.size())
 		{
 			vor_inhibit[idx] = id;
-			xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
+			if (id != "")
+			{
+				xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
+			}
+			else
+			{
+				xp_databus->set_data_s(out_drs.excl_vors.at(idx), " ", -1);
+			}
 		}
 	}
 
 	void AvionicsSys::update_sys()
 	{
-		
+
 	}
 
 	void AvionicsSys::main_loop()
 	{
 		update_load_status();
-		while (!sim_shutdown.load(std::memory_order_seq_cst))
+		while (!sim_shutdown.load(std::memory_order_relaxed))
 		{
 			update_sys();
 		}
@@ -79,7 +97,10 @@ namespace StratosphereAvionics
 		delete[] nav_db;
 		delete[] apt_db;
 		delete[] navaid_db;
+		delete[] dr_cache;
 	}
+
+	// Private member functions:
 
 	void AvionicsSys::update_load_status()
 	{
