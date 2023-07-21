@@ -17,7 +17,7 @@ enum FMS_constants
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0, 0 };
+std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0, 0, 0 };
 std::vector<double> double_dr_values = { 0, 0, 0, 0 };
 
 char ref_nav_in_icao[REF_NAV_ICAO_BUF_LENGTH];
@@ -53,7 +53,8 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, nullptr}, &int_dr_values[5]},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, nullptr}, &int_dr_values[6]},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, nullptr}, &int_dr_values[7]},
-	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, nullptr},&int_dr_values[8]}
+	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, nullptr},&int_dr_values[8]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, nullptr},&int_dr_values[9]}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
@@ -103,6 +104,13 @@ std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<std::thread> avionics_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
 
+StratosphereAvionics::avionics_out_drs av_out = {
+											{"Strato/777/FMC/REF_NAV/navaid_1_out",
+											 "Strato/777/FMC/REF_NAV/navaid_2_out"},
+											{"Strato/777/FMC/REF_NAV/vor_1_out",
+											 "Strato/777/FMC/REF_NAV/vor_2_out"}
+};
+
 StratosphereAvionics::fmc_in_drs fmc_r_in = { 
 											"sim/flightmodel/position/latitude",
 											"sim/flightmodel/position/longitude",
@@ -131,6 +139,7 @@ StratosphereAvionics::fmc_out_drs fmc_r_out = {
 
 											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
+											  "Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/poi_list",
 											  {"Strato/777/FMC/FMC_R/SEL_WPT/poi1_type",
 											   "Strato/777/FMC/FMC_R/SEL_WPT/poi2_type",
@@ -221,8 +230,8 @@ void unregister_data_refs()
 float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon)
 {
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
-	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus);
-	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, &fmc_r_in, &fmc_r_out);
+	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_out);
+	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out);
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
 			avionics->main_loop();
