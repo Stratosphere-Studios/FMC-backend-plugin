@@ -17,82 +17,85 @@ enum FMS_constants
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-std::vector<int> int_dr_values = { 0, 0, 0, -1, 0, 1, 0, 0, 0, 0 };
-std::vector<double> double_dr_values = { 0, 0, 0, 0 };
-
-char ref_nav_in_icao[REF_NAV_ICAO_BUF_LENGTH];
-char ref_nav_out_icao[REF_NAV_ICAO_BUF_LENGTH];
-char ref_nav_out_mag_var[N_REF_NAV_MAG_VAR_BUF_LENGTH];
-char ref_nav_in_navaid1[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_out_navaid1[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_in_navaid2[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_out_navaid2[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_in_vor1[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_out_vor1[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_in_vor2[N_REF_NAV_NAVAID_BUF_LENGTH];
-char ref_nav_out_vor2[N_REF_NAV_NAVAID_BUF_LENGTH];
-
-float sel_wpt_pos[3 * N_CDU_OUT_LINES];
-int sel_wpt_types[N_CDU_OUT_LINES];
-char sel_wpt_type_1[FMC_SCREEN_LINE_LENGTH];
-char sel_wpt_type_2[FMC_SCREEN_LINE_LENGTH];
-char sel_wpt_type_3[FMC_SCREEN_LINE_LENGTH];
-char sel_wpt_type_4[FMC_SCREEN_LINE_LENGTH];
-char sel_wpt_type_5[FMC_SCREEN_LINE_LENGTH];
-char sel_wpt_type_6[FMC_SCREEN_LINE_LENGTH];
-
-char scratchpad_msg[FMC_SCREEN_LINE_LENGTH];
+std::vector<int> fmc_l_int_dr = { -1, 1 };
+std::vector<int> fmc_r_int_dr = { -1, 1 };
 
 
 std::vector<DRUtil::dref_i> int_datarefs = {
-	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, nullptr}, &int_dr_values[0]},
-	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, nullptr}, &int_dr_values[1]},
-	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, nullptr}, &int_dr_values[2]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, nullptr}, &int_dr_values[3]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, nullptr}, &int_dr_values[4]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, nullptr}, &int_dr_values[5]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, nullptr}, &int_dr_values[6]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, nullptr}, &int_dr_values[7]},
-	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, nullptr},&int_dr_values[8]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, nullptr},&int_dr_values[9]}
+	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, false, nullptr}, nullptr},
+
+	// FMC L data refs:
+
+	{{"Strato/777/FMC/FMC_L/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/page", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_l_int_dr[0]},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, nullptr},
+
+	// FMC R data refs:
+
+	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[0]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, nullptr},
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, nullptr}, &double_dr_values[0]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, nullptr}, &double_dr_values[1]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, nullptr}, &double_dr_values[2]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, nullptr}, &double_dr_values[3]}
+	// FMC L data refs:
+
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr},
+
+	// FMC R data refs:
+
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr}
 };
 
 std::vector<DRUtil::dref_ia> int_arr_datarefs = {
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_types", DR_READONLY, nullptr}, sel_wpt_types, N_CDU_OUT_LINES}
+	
 };
 
 std::vector<DRUtil::dref_fa> float_arr_datarefs = {
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", DR_READONLY, nullptr}, sel_wpt_pos, 3 * N_CDU_OUT_LINES}
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", DR_READONLY, false, nullptr}, nullptr, 3 * N_CDU_OUT_LINES}
 };
 
 std::vector<DRUtil::dref_s> str_datarefs = {
-	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", DR_WRITABLE, nullptr}, ref_nav_in_icao, REF_NAV_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", DR_READONLY, nullptr}, ref_nav_out_icao, REF_NAV_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var", DR_READONLY, nullptr}, ref_nav_out_mag_var, N_REF_NAV_MAG_VAR_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_1_in", DR_WRITABLE, nullptr}, ref_nav_in_navaid1, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/REF_NAV/navaid_1_out", DR_READONLY, nullptr}, ref_nav_out_navaid1, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_2_in", DR_WRITABLE, nullptr}, ref_nav_in_navaid2, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/REF_NAV/navaid_2_out", DR_READONLY, nullptr}, ref_nav_out_navaid2, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_1_in", DR_WRITABLE, nullptr}, ref_nav_in_vor1, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/REF_NAV/vor_1_out", DR_READONLY, nullptr}, ref_nav_out_vor1, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_2_in", DR_WRITABLE, nullptr}, ref_nav_in_vor2, N_REF_NAV_NAVAID_BUF_LENGTH},
-	{{"Strato/777/FMC/REF_NAV/vor_2_out", DR_READONLY, nullptr}, ref_nav_out_vor2, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/navaid_1_out", DR_READONLY, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/navaid_2_out", DR_READONLY, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/vor_1_out", DR_READONLY, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/REF_NAV/vor_2_out", DR_READONLY, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
 
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi1_type", DR_READONLY, nullptr}, sel_wpt_type_1, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi2_type", DR_READONLY, nullptr}, sel_wpt_type_2, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi3_type", DR_READONLY, nullptr}, sel_wpt_type_3, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi4_type", DR_READONLY, nullptr}, sel_wpt_type_4, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi5_type", DR_READONLY, nullptr}, sel_wpt_type_5, FMC_SCREEN_LINE_LENGTH},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi6_type", DR_READONLY, nullptr}, sel_wpt_type_6, FMC_SCREEN_LINE_LENGTH},
+	// FMC R data refs:
 
-	{{"Strato/777/FMC/FMC_R/scratchpad_msg", DR_READONLY, nullptr}, scratchpad_msg, FMC_SCREEN_LINE_LENGTH}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/input_icao", DR_WRITABLE, false, nullptr}, nullptr, REF_NAV_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/out_icao", DR_READONLY, false, nullptr}, nullptr, REF_NAV_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var", DR_READONLY, false, nullptr}, nullptr, N_REF_NAV_MAG_VAR_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_1_in", DR_WRITABLE, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/navaid_2_in", DR_WRITABLE, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_1_in", DR_WRITABLE, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/vor_2_in", DR_WRITABLE, false, nullptr}, nullptr, N_REF_NAV_NAVAID_BUF_LENGTH},
+	
+
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi1_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi2_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi3_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi4_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi5_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi6_type", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH},
+	{{"Strato/777/FMC/FMC_R/scratchpad_msg", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH}
 };
 
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
@@ -155,18 +158,28 @@ int data_refs_created = 0;
 
 int register_data_refs()
 {
-	int status = 1;
-
 	for (int i = 0; i < int_datarefs.size(); i++)
 	{
-		int_datarefs.at(i).init();
+		int ret = int_datarefs.at(i).init();
+
+		if (!ret)
+		{
+			return 0;
+		}
+
 		XPDataBus::custom_data_ref_entry e = { int_datarefs.at(i).dr.name, {(void*)int_datarefs.at(i).val, xplmType_Int} };
 		data_refs.push_back(e);
 	}
 
 	for (int i = 0; i < double_datarefs.size(); i++)
 	{
-		double_datarefs.at(i).init();
+		int ret = double_datarefs.at(i).init();
+
+		if (!ret)
+		{
+			return 0;
+		}
+
 		XPDataBus::custom_data_ref_entry e = { double_datarefs.at(i).dr.name, {(void*)double_datarefs.at(i).val, 
 												xplmType_Double} };
 		data_refs.push_back(e);
@@ -174,7 +187,13 @@ int register_data_refs()
 
 	for (int i = 0; i < int_arr_datarefs.size(); i++)
 	{
-		int_arr_datarefs.at(i).init();
+		int ret = int_arr_datarefs.at(i).init();
+
+		if (!ret)
+		{
+			return 0;
+		}
+
 		XPDataBus::custom_data_ref_entry e = { int_arr_datarefs.at(i).dr.name, {(void*)int_arr_datarefs.at(i).array,
 												xplmType_IntArray, size_t(int_arr_datarefs.at(i).n_length)} };
 		data_refs.push_back(e);
@@ -182,7 +201,13 @@ int register_data_refs()
 
 	for (int i = 0; i < float_arr_datarefs.size(); i++)
 	{
-		float_arr_datarefs.at(i).init();
+		int ret = float_arr_datarefs.at(i).init();
+
+		if (!ret)
+		{
+			return 0;
+		}
+
 		XPDataBus::custom_data_ref_entry e = { float_arr_datarefs.at(i).dr.name, {(void*)float_arr_datarefs.at(i).array,
 												xplmType_FloatArray, size_t(float_arr_datarefs.at(i).n_length)} };
 		data_refs.push_back(e);
@@ -190,40 +215,46 @@ int register_data_refs()
 
 	for (int i = 0; i < str_datarefs.size(); i++)
 	{
-		str_datarefs.at(i).init();
+		int ret = str_datarefs.at(i).init();
+
+		if (!ret)
+		{
+			return 0;
+		}
+
 		XPDataBus::custom_data_ref_entry e = { str_datarefs.at(i).dr.name, {(void*)str_datarefs.at(i).str, 
 												xplmType_Data, size_t(str_datarefs.at(i).n_length)}};
 		data_refs.push_back(e);
 	}
 
-	return status;
+	return 1;
 }
 
 void unregister_data_refs()
 {
 	for (int i = 0; i < int_datarefs.size(); i++)
 	{
-		int_datarefs.at(i).dr.unReg();
+		int_datarefs.at(i).unReg();
 	}
 
 	for (int i = 0; i < double_datarefs.size(); i++)
 	{
-		double_datarefs.at(i).dr.unReg();
+		double_datarefs.at(i).unReg();
 	}
 
 	for (int i = 0; i < int_arr_datarefs.size(); i++)
 	{
-		int_arr_datarefs.at(i).dr.unReg();
+		int_arr_datarefs.at(i).unReg();
 	}
 
 	for (int i = 0; i < float_arr_datarefs.size(); i++)
 	{
-		float_arr_datarefs.at(i).dr.unReg();
+		float_arr_datarefs.at(i).unReg();
 	}
 
 	for (int i = 0; i < str_datarefs.size(); i++)
 	{
-		str_datarefs.at(i).dr.unReg();
+		str_datarefs.at(i).unReg();
 	}
 }
 
@@ -256,6 +287,11 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
 	if (data_refs_created)
 	{
 		XPLMRegisterFlightLoopCallback(FMS_init_FLCB, -1, nullptr);
+		XPLMDebugString("777_FMS: Initializing\n");
+	}
+	else
+	{
+		XPLMDebugString("777_FMS: Failed to initialize(err_dr_create). Disabling\n");
 	}
 
 	return 1;

@@ -29,7 +29,7 @@ namespace DRUtil
 		Generic dataref structure. DO NOT USE!. This one has no type/value.
 		*/
 		const char* name;
-		bool is_writable;
+		bool is_writable, is_allocated;
 		XPLMDataRef xpdr = nullptr;
 
 		void regInDRE()
@@ -80,8 +80,23 @@ namespace DRUtil
 			/*
 			Initializes the dataref inside the sim.
 			Also notifies the dataref editor about the new dataref.
-			If dataref already exists, just gives a handle to it
+			If the dataref already exists, just gives a handle to it
 			*/
+
+			if (val == nullptr)
+			{
+				dr.is_allocated = true;
+				val = new int;
+				*val = 0;
+			}
+
+			if (val == nullptr) 
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0; 
+			}
+
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -116,6 +131,15 @@ namespace DRUtil
 			}
 			return 1;
 		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] val;
+			}
+			dr.unReg();
+		}
 	};
 
 	struct dref_d
@@ -149,8 +173,23 @@ namespace DRUtil
 			/*
 			Initializes the dataref inside the sim.
 			Also notifies the dataref editor about the new dataref.
-			If dataref already exists, just gives a handle to it
+			If the dataref already exists, just gives a handle to it
 			*/
+
+			if (val == nullptr)
+			{
+				dr.is_allocated = true;
+				val = new double;
+				*val = 0;
+			}
+
+			if (val == nullptr)
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0;
+			}
+
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -184,6 +223,15 @@ namespace DRUtil
 				return 0;
 			}
 			return 1;
+		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] val;
+			}
+			dr.unReg();
 		}
 	};
 
@@ -224,8 +272,26 @@ namespace DRUtil
 			/*
 			Initializes the dataref inside the sim.
 			Also notifies the dataref editor about the new dataref.
-			If dataref already exists, just gives a handle to it
+			If the dataref already exists, just gives a handle to it
 			*/
+
+			if (array == nullptr)
+			{
+				dr.is_allocated = true;
+				array = new int[n_length];
+				for (int i = 0; i < n_length; i++)
+				{
+					array[i] = 0;
+				}
+			}
+
+			if (array == nullptr)
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0;
+			}
+
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -291,6 +357,15 @@ namespace DRUtil
 			
 			return 1;
 		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] array;
+			}
+			dr.unReg();
+		}
 	};
 
 	struct dref_fa
@@ -331,8 +406,26 @@ namespace DRUtil
 			/*
 			Initializes the dataref inside the sim.
 			Also notifies the dataref editor about the new dataref.
-			If dataref already exists, just gives a handle to it
+			If the dataref already exists, just gives a handle to it
 			*/
+
+			if (array == nullptr)
+			{
+				dr.is_allocated = true;
+				array = new float[n_length];
+				for (int i = 0; i < n_length; i++)
+				{
+					array[i] = 0;
+				}
+			}
+
+			if (array == nullptr)
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0;
+			}
+
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -399,6 +492,15 @@ namespace DRUtil
 			
 			return 1;
 		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] array;
+			}
+			dr.unReg();
+		}
 	};
 
 	struct dref_s
@@ -418,6 +520,24 @@ namespace DRUtil
 			Initializes the dataref inside the sim.
 			Also notifies the dataref editor about the new dataref.
 			*/
+
+			if (str == nullptr)
+			{
+				dr.is_allocated = true;
+				str = new char[n_length];
+				for (int i = 0; i < n_length; i++)
+				{
+					str[i] = 0;
+				}
+			}
+
+			if (str == nullptr)
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0;
+			}
+
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -479,6 +599,15 @@ namespace DRUtil
 			}
 			
 			return 1;
+		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] str;
+			}
+			dr.unReg();
 		}
 	};
 
