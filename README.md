@@ -6,6 +6,11 @@ Please, note that this is not meant to be used outside of the
 
 ## Getting started
 
+### FAQ
+
+Q: master, or stable: which one should I use?
+A: It comes down to what you want to do. If you just want to compile the plugin and use it, you should choose stable. Otherwise, use the master branch. It doesn't have the left FMC thread and datarefs associated with it, which saves a lot of head aches during the development.
+
 ### Compiling on linux/mac:
 
 1) Make sure you have CMake and g++ installed.
