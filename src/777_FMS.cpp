@@ -16,8 +16,10 @@ std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
 std::shared_ptr<XPDataBus::DataBus> sim_databus;
 std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
+std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<std::thread> avionics_thread;
+std::shared_ptr<std::thread> fmc_l_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
 
 int data_refs_created = 0;
@@ -27,10 +29,15 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 {
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_out);
+	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out);
 	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out);
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
 			avionics->main_loop();
+		});
+	fmc_l_thread = std::make_shared<std::thread>([]()
+		{
+			fmc_l->main_loop();
 		});
 	fmc_r_thread = std::make_shared<std::thread>([]()
 		{

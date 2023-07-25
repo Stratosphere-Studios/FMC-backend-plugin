@@ -64,6 +64,7 @@ std::vector<DRUtil::dref_ia> int_arr_datarefs = {
 };
 
 std::vector<DRUtil::dref_fa> float_arr_datarefs = {
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/poi_list", DR_READONLY, false, nullptr}, nullptr, 3 * N_CDU_OUT_LINES},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", DR_READONLY, false, nullptr}, nullptr, 3 * N_CDU_OUT_LINES}
 };
 
