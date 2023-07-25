@@ -16,8 +16,10 @@ std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
 std::shared_ptr<XPDataBus::DataBus> sim_databus;
 std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
+std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<std::thread> avionics_thread;
+std::shared_ptr<std::thread> fmc_l_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
 
 int data_refs_created = 0;
