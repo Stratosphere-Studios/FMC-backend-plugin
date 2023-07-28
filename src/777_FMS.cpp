@@ -29,8 +29,10 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 {
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_out);
+
 	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out);
 	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out);
+
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
 			avionics->main_loop();
@@ -75,17 +77,22 @@ PLUGIN_API void	XPluginStop(void)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
 		avionics->sim_shutdown.store(true, std::memory_order_relaxed);
+
 		fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
 		fmc_r->sim_shutdown.store(true, std::memory_order_relaxed);
+
 		sim_databus->cleanup();
 		fmc_l_thread->join();
 		fmc_r_thread->join();
 		avionics_thread->join();
+
 		fmc_dr::unregister_data_refs(d_init);
+
 		fmc_l_thread.reset();
 		fmc_r_thread.reset();
 		avionics.reset();
 		sim_databus.reset();
+
 		XPLMDebugString("777_FMS: Successfully disabled.\n");
 	}
 }
