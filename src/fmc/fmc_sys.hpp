@@ -16,7 +16,7 @@ enum fmc_pages
 	N_CDU_OUT_LINES = 6,
 
 	PAGE_OTHER = 0,
-	PAGE_RTE = 1,
+	PAGE_RTE1 = 1,
 	PAGE_REF_NAV_DATA = 2
 };
 
@@ -25,6 +25,9 @@ namespace StratosphereAvionics
 {
 	struct avionics_out_drs
 	{
+		std::string dep_icao, arr_icao;
+		std::string dep_rnw;
+
 		std::vector<std::string> excl_navaids;
 		std::vector<std::string> excl_vors;
 	};
@@ -43,6 +46,11 @@ namespace StratosphereAvionics
 			poi_freq, poi_mag_var;
 	};
 
+	struct fmc_rte1_drs
+	{
+		std::string dep_icao, arr_icao, dep_rnw;
+	};
+
 	struct fmc_sel_desired_wpt_in_drs
 	{
 		std::string curr_page, poi_idx;
@@ -55,6 +63,12 @@ namespace StratosphereAvionics
 		std::vector<std::string> poi_types;
 	};
 
+	struct scratchpad_drs
+	{
+		int not_in_db_idx;
+		std::vector<std::string> dr_list;
+	};
+
 	struct fmc_in_drs
 	{
 		// Sim data refs:
@@ -62,6 +76,7 @@ namespace StratosphereAvionics
 
 		// Custom data refs:
 		fmc_ref_nav_in_drs ref_nav;
+		fmc_rte1_drs rte1;
 		fmc_sel_desired_wpt_in_drs sel_desired_wpt;
 		std::string scratch_pad_msg_clear, curr_page;
 	};
@@ -75,8 +90,16 @@ namespace StratosphereAvionics
 		fmc_sel_desired_wpt_out_drs sel_desired_wpt;
 
 		// MISC
-		std::string scratchpad_msg;
+		scratchpad_drs scratch_msg;
 	};
+
+
+	struct flightplan
+	{
+		libnav::airport dep_apt, arr_apt;
+		libnav::runway dep_rnw, arr_rnw;
+	};
+
 
 	class AvionicsSys 
 	{
@@ -101,6 +124,14 @@ namespace StratosphereAvionics
 
 		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out);
 
+		void set_fpln_dep_apt(libnav::airport apt);
+
+		void set_fpln_arr_apt(libnav::airport apt);
+
+		void set_fpln_dep_rnw(libnav::runway rnw);
+
+		void set_fpln_arr_rnw(libnav::runway rnw);
+
 		void excl_navaid(std::string id, int idx);
 
 		void excl_vor(std::string id, int idx);
@@ -114,10 +145,11 @@ namespace StratosphereAvionics
 	private:
 		avionics_out_drs out_drs;
 
+		std::mutex fpln_mutex;
 		std::mutex navaid_inhibit_mutex;
 		std::mutex vor_inhibit_mutex;
 
-		std::string icao_entry_last;
+		flightplan pln;
 
 		std::vector<std::string> navaid_inhibit = { "", "" };
 		std::vector<std::string> vor_inhibit = { "", "" };
@@ -152,6 +184,16 @@ namespace StratosphereAvionics
 		void update_ref_nav(); // Updates REF NAV DATA page
 
 		void reset_ref_nav();
+
+		/*
+			Updates airport icao codes on any rte page.
+			If user has entered a valid icao, returns true.
+			Otherwise, returns false.
+		*/
+
+		bool update_rte_apt(std::string in_dr, libnav::airport_data* apt_data, libnav::runway_data* rnw_data); 
+
+		void update_rte1();
 
 		void update_scratch_msg(); // Updates scratch pad messages
 

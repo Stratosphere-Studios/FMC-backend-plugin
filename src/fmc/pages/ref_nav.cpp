@@ -11,7 +11,6 @@ namespace StratosphereAvionics
 	int FMC::update_ref_nav_poi_data(size_t n_arpts_found, size_t n_wpts_found, std::string icao, 
 									 libnav::airport_data arpt_found, std::vector<libnav::waypoint_entry> wpts_found)
 	{
-		xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
 		xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
 
 		double poi_lat, poi_lon;
@@ -96,12 +95,9 @@ namespace StratosphereAvionics
 						}
 						else
 						{
-							xp_databus->set_data_s(out_drs.scratchpad_msg, "NOT IN DATA BASE");
+							int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+							xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
 						}
-					}
-					else
-					{
-						xp_databus->set_data_s(out_drs.scratchpad_msg, "INVALID ENTRY");
 					}
 				}
 				else
@@ -165,7 +161,8 @@ namespace StratosphereAvionics
 					}
 					else
 					{
-						xp_databus->set_data_s(out_drs.scratchpad_msg, "NOT IN DATA BASE");
+						int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+						xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
 						reset_ref_nav();
 					}
 				}

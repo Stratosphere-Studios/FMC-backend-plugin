@@ -5,8 +5,9 @@
 
 #include "fmc_sys.hpp"
 
-#include "pages/sel_desired_wpt.cpp"
 #include "pages/ref_nav.cpp"
+#include "pages/rte1.cpp"
+#include "pages/sel_desired_wpt.cpp"
 
 
 namespace StratosphereAvionics
@@ -42,6 +43,33 @@ namespace StratosphereAvionics
 		nav_db = new libnav::NavDB(apt_db, navaid_db);
 
 		dr_cache = new XPDataBus::DataRefCache();
+	}
+
+	void AvionicsSys::set_fpln_dep_apt(libnav::airport apt)
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		pln.dep_apt = apt;
+		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
+	}
+
+	void AvionicsSys::set_fpln_arr_apt(libnav::airport apt)
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		pln.arr_apt = apt;
+		xp_databus->set_data_s(out_drs.arr_icao, apt.icao);
+	}
+
+	void AvionicsSys::set_fpln_dep_rnw(libnav::runway rnw)
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		pln.dep_rnw = rnw;
+		xp_databus->set_data_s(out_drs.dep_rnw, rnw.id);
+	}
+
+	void AvionicsSys::set_fpln_arr_rnw(libnav::runway rnw)
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		pln.arr_rnw = rnw;
 	}
 
 	void AvionicsSys::excl_navaid(std::string id, int idx)
@@ -143,7 +171,10 @@ namespace StratosphereAvionics
 	{
 		if (xp_databus->get_datai(in_drs.scratch_pad_msg_clear))
 		{
-			xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
+			for (int i = 0; i < out_drs.scratch_msg.dr_list.size(); i++)
+			{
+				xp_databus->set_datai(out_drs.scratch_msg.dr_list[i], 0);
+			}
 			xp_databus->set_datai(in_drs.scratch_pad_msg_clear, 0);
 		}
 	}
@@ -157,6 +188,8 @@ namespace StratosphereAvionics
 			{
 			case PAGE_REF_NAV_DATA:
 				update_ref_nav();
+			case PAGE_RTE1:
+				update_rte1();
 			}
 		}
 	}
