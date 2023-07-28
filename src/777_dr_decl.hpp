@@ -35,6 +35,8 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, nullptr},
+
+	{{"Strato/777/FMC/FMC_R/scratchpad/not_in_database", DR_READONLY, false, nullptr}, nullptr}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
@@ -147,5 +149,5 @@ StratosphereAvionics::fmc_out_drs fmc_r_out = {
 											   "Strato/777/FMC/FMC_R/SEL_WPT/poi5_type",
 											   "Strato/777/FMC/FMC_R/SEL_WPT/poi6_type"}},
 
-											  "Strato/777/FMC/FMC_R/scratchpad_msg"
+											 {0, {"Strato/777/FMC/FMC_L/scratchpad/not_in_database"}}
 };

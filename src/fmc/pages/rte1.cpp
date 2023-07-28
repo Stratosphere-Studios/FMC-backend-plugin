@@ -28,7 +28,8 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				xp_databus->set_data_s(out_drs.scratchpad_msg, "NOT IN DATA BASE");
+				int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+				xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
 			}
 		}
 
@@ -83,7 +84,8 @@ namespace StratosphereAvionics
 				}
 				else
 				{
-					xp_databus->set_data_s(out_drs.scratchpad_msg, "NOT IN DATA BASE");
+					int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+					xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
 				}
 			}
 

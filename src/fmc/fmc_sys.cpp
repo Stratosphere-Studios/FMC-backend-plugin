@@ -171,7 +171,10 @@ namespace StratosphereAvionics
 	{
 		if (xp_databus->get_datai(in_drs.scratch_pad_msg_clear))
 		{
-			xp_databus->set_data_s(out_drs.scratchpad_msg, " ", -1);
+			for (int i = 0; i < out_drs.scratch_msg.dr_list.size(); i++)
+			{
+				xp_databus->set_datai(out_drs.scratch_msg.dr_list[i], 0);
+			}
 			xp_databus->set_datai(in_drs.scratch_pad_msg_clear, 0);
 		}
 	}

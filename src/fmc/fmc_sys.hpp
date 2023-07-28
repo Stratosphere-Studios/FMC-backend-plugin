@@ -63,6 +63,12 @@ namespace StratosphereAvionics
 		std::vector<std::string> poi_types;
 	};
 
+	struct scratchpad_drs
+	{
+		int not_in_db_idx;
+		std::vector<std::string> dr_list;
+	};
+
 	struct fmc_in_drs
 	{
 		// Sim data refs:
@@ -84,7 +90,7 @@ namespace StratosphereAvionics
 		fmc_sel_desired_wpt_out_drs sel_desired_wpt;
 
 		// MISC
-		std::string scratchpad_msg;
+		scratchpad_drs scratch_msg;
 	};
 
 
