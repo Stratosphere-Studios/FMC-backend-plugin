@@ -87,7 +87,7 @@ namespace StratosphereAvionics
 			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3);
 			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3 + 1);
 			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3 + 2);
-			xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i), " ", -1);
+			xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i), "/0", -1);
 		}
 		xp_databus->set_datai(out_drs.sel_desired_wpt.n_subpages, 0);
 		xp_databus->set_datai(in_drs.sel_desired_wpt.curr_page, 1);

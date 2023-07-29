@@ -193,6 +193,6 @@ namespace StratosphereAvionics
 		xp_databus->set_datad(out_drs.ref_nav.poi_lon, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_elevation, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_freq, -1);
-		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, " ", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, "\0", -1);
 	}
 }
