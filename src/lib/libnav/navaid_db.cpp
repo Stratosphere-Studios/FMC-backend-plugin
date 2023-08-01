@@ -153,13 +153,13 @@ namespace libnav
 		return false;
 	}
 
-	size_t NavaidDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
+	int NavaidDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
 	{
 		if (is_wpt(id))
 		{
 			std::lock_guard<std::mutex> lock(wpt_db_mutex);
 			std::vector<waypoint_entry>* waypoints = &wpt_cache->at(id);
-			size_t n_waypoints = waypoints->size();
+			int n_waypoints = int(waypoints->size());
 			for (int i = 0; i < n_waypoints; i++)
 			{
 				out->push_back(waypoints->at(i));
