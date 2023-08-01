@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 #pragma once
 
 #include <future>
@@ -104,9 +108,11 @@ namespace libnav
 
 		bool is_airport(std::string icao_code);
 
-		size_t get_airport_data(std::string icao_code, airport_data* out);
+		int get_airport_data(std::string icao_code, airport_data* out);
 
-		size_t get_runway_data(std::string icao_code, runway_data* out);
+		int get_apt_rwys(std::string icao_code, runway_data* out);
+
+		int get_rnw_data(std::string apt_icao, std::string rnw_id, runway_entry* out);
 
 	private:
 		std::string custom_arpt_db_sign = "ARPTDB";

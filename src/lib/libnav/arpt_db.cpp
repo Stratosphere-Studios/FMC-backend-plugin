@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 #include "arpt_db.hpp"
 
 
@@ -286,7 +290,7 @@ namespace libnav
 		return arpt_db->find(icao_code) != arpt_db->end();
 	}
 
-	size_t ArptDB::get_airport_data(std::string icao_code, airport_data* out)
+	int ArptDB::get_airport_data(std::string icao_code, airport_data* out)
 	{
 		if (is_airport(icao_code))
 		{
@@ -302,12 +306,12 @@ namespace libnav
 		return 0;
 	}
 
-	size_t ArptDB::get_runway_data(std::string icao_code, runway_data* out)
+	int ArptDB::get_apt_rwys(std::string icao_code, runway_data* out)
 	{
 		if (is_airport(icao_code))
 		{
 			std::lock_guard<std::mutex> lock(rnw_db_mutex);
-			size_t n_runways = 0;
+			int n_runways = 0;
 			runway_data tmp = rnw_db->at(icao_code);
 			for (auto& it : tmp)
 			{
@@ -318,6 +322,23 @@ namespace libnav
 		}
 		return 0;
 	}
+
+	int ArptDB::get_rnw_data(std::string apt_icao, std::string rnw_id, runway_entry* out)
+	{
+		if (is_airport(apt_icao))
+		{
+			std::lock_guard<std::mutex> lock(rnw_db_mutex);
+			runway_data tmp = rnw_db->at(apt_icao);
+
+			if (tmp.find(rnw_id) != tmp.end())
+			{
+				*out = tmp.at(rnw_id);
+				return 1;
+			}
+		}
+		return 0;
+	}
+
 
 	// Private member functions:
 
