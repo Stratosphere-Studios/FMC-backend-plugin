@@ -8,6 +8,7 @@
 #define RAD_TO_DEG 180.0 / M_PI
 #define EARTH_RADIUS_NM 3441.0;
 #define NM_TO_M 1852;
+#define FT_TO_NM 1 / 6076.12;
 
 
 namespace geo
