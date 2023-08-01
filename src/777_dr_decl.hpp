@@ -10,7 +10,8 @@ enum FMS_constants
 	FMC_SCREEN_LINE_LENGTH = 24,
 	N_REF_NAV_MAG_VAR_BUF_LENGTH = 4,
 	N_REF_NAV_NAVAID_BUF_LENGTH = 4, 
-	N_RTE_ICAO_BUF_LENGTH = 4
+	N_RTE_ICAO_BUF_LENGTH = 4,
+	N_RTE_RWY_BUF_LENGTH = 5
 };
 
 std::vector<int> fmc_l_int_dr = { -1, 1 };
@@ -81,7 +82,7 @@ std::vector<DRUtil::dref_s> str_datarefs = {
 
 	{{"Strato/777/FMC/RTE1/dep_icao_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_ICAO_BUF_LENGTH},
 	{{"Strato/777/FMC/RTE1/arr_icao_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_ICAO_BUF_LENGTH},
-	{{"Strato/777/FMC/RTE1/dep_rnw_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_ICAO_BUF_LENGTH},
+	{{"Strato/777/FMC/RTE1/dep_rnw_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_RWY_BUF_LENGTH},
 
 	// FMC L data refs:
 

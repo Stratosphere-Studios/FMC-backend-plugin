@@ -142,7 +142,7 @@ namespace StratosphereAvionics
 				if (icao != "")
 				{
 					// Reset poi id so that only the current id gets displayed
-					xp_databus->set_data_s(out_drs.ref_nav.poi_id, " ", -1);
+					xp_databus->set_data_s(out_drs.ref_nav.poi_id, "\0", -1);
 					xp_databus->set_data_s(in_drs.ref_nav.poi_id, " ", -1);
 
 					libnav::airport_data arpt_found{};
@@ -193,6 +193,7 @@ namespace StratosphereAvionics
 		xp_databus->set_datad(out_drs.ref_nav.poi_lon, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_elevation, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_freq, -1);
-		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, " ", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, "\0", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_id, "\0", -1);
 	}
 }

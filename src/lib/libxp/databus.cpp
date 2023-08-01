@@ -392,11 +392,16 @@ namespace XPDataBus
 			{
 				data_length = str_length;
 			}
-			if (str_length == 1 && in->offset == -1) // Set all elements of output string to 1 character
+			if (str_length <= 1 && in->offset == -1) // Set all elements of output string to 1 character
 			{
+				char c = 0;
+				if (str_length)
+				{
+					c = in->str.at(0);
+				}
 				for(int i = 0; i < ptr.n_length; i++)
 				{
-					data[i] = in->str.at(0);
+					data[i] = c;
 				}
 			}
 			else

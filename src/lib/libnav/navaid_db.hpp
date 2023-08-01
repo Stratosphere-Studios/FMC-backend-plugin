@@ -113,7 +113,19 @@ namespace libnav
 	std::string navaid_to_str(int navaid_type);
 
 	void sort_wpt_entry_by_dist(std::vector<waypoint_entry>* vec, geo::point p);
-	
+
 	void sort_wpts_by_dist(std::vector<waypoint>* vec, geo::point p);
 
-}
+};
+
+
+namespace radnav_util
+{
+	struct navaid
+	{
+		std::string id;
+		libnav::waypoint_entry data;
+		double qual, time_blacklisted_sec;
+		bool is_blacklisted;
+	};
+};

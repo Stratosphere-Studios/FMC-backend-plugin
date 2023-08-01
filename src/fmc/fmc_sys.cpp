@@ -63,7 +63,7 @@ namespace StratosphereAvionics
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_rnw = rnw;
-		xp_databus->set_data_s(out_drs.dep_rnw, rnw.id);
+		xp_databus->set_data_s(out_drs.dep_rnw, "RW"+rnw.id);
 	}
 
 	void AvionicsSys::set_fpln_arr_rnw(libnav::runway rnw)
@@ -84,7 +84,7 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), " ", -1);
+				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), "\0", -1);
 			}
 		}
 	}
@@ -101,7 +101,7 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				xp_databus->set_data_s(out_drs.excl_vors.at(idx), " ", -1);
+				xp_databus->set_data_s(out_drs.excl_vors.at(idx), "\0", -1);
 			}
 		}
 	}
