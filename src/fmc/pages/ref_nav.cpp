@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 enum ref_nav_const
 {
 	RAD_NAV_INHIBIT = 0,
@@ -142,15 +146,27 @@ namespace StratosphereAvionics
 				if (icao != "")
 				{
 					// Reset poi id so that only the current id gets displayed
-					xp_databus->set_data_s(out_drs.ref_nav.poi_id, "\0", -1);
+					xp_databus->set_data_s(out_drs.ref_nav.poi_id, " ", -1);
 					xp_databus->set_data_s(in_drs.ref_nav.poi_id, " ", -1);
 
 					libnav::airport_data arpt_found{};
-					std::vector<libnav::waypoint_entry> wpts_found = {};
+					std::vector<libnav::waypoint_entry> wpts_found{};
+					libnav::runway_entry rwy_found{};
 
-					size_t n_arpts_found = nav_db->get_airport_data(icao, &arpt_found);
-					size_t n_wpts_found = nav_db->get_wpt_data(icao, &wpts_found);
+					int n_arpts_found, n_wpts_found, n_rwys_found = 0;
 
+					n_arpts_found = nav_db->get_airport_data(icao, &arpt_found);
+					n_wpts_found = nav_db->get_wpt_data(icao, &wpts_found);
+
+					if (std::isdigit(icao[0]))
+					{
+						n_rwys_found = get_arrival_rwy_data(icao, &rwy_found);
+					}
+					else if (icao.length() == 5 && icao[0] == 'R' && icao[1] == 'W' && std::isdigit(icao[2]))
+					{
+						n_rwys_found = get_arrival_rwy_data(icao.substr(2, icao.length() - 1), &rwy_found);
+					}
+					
 					if (n_arpts_found + n_wpts_found)
 					{
 						int ret = update_ref_nav_poi_data(n_arpts_found, n_wpts_found, icao, arpt_found, wpts_found);

@@ -1,6 +1,6 @@
 /*
 	This header file contains definitions of classes, functions, etc 
-	used in the fmc implementation.
+	used in the fmc implementation. Author: discord/bruh4096#4512
 */
 
 #pragma once
@@ -126,7 +126,11 @@ namespace StratosphereAvionics
 
 		void set_fpln_dep_apt(libnav::airport apt);
 
+		std::string get_fpln_dep_icao();
+
 		void set_fpln_arr_apt(libnav::airport apt);
+
+		std::string get_fpln_arr_icao();
 
 		void set_fpln_dep_rnw(libnav::runway rnw);
 
@@ -210,5 +214,7 @@ namespace StratosphereAvionics
 		std::shared_ptr<XPDataBus::DataBus> xp_databus;
 
 		XPDataBus::DataRefCache* dr_cache;
+
+		int get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry* out);
 	};
 }

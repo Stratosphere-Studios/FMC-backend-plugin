@@ -1,6 +1,6 @@
 /*
 	This source file contains the implementation of the fmc for 
-	B77W by stratosphere studios.
+	B77W by stratosphere studios. Author: discord/bruh4096#4512
 */
 
 #include "fmc_sys.hpp"
@@ -45,11 +45,23 @@ namespace StratosphereAvionics
 		dr_cache = new XPDataBus::DataRefCache();
 	}
 
+	std::string AvionicsSys::get_fpln_dep_icao()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.dep_apt.icao;
+	}
+
 	void AvionicsSys::set_fpln_dep_apt(libnav::airport apt)
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_apt = apt;
 		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
+	}
+
+	std::string AvionicsSys::get_fpln_arr_icao()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.arr_apt.icao;
 	}
 
 	void AvionicsSys::set_fpln_arr_apt(libnav::airport apt)
@@ -147,6 +159,8 @@ namespace StratosphereAvionics
 
 	// FMC definitions:
 
+	// Public member functions:
+
 	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out)
 	{
 		avionics = av;
@@ -197,5 +211,13 @@ namespace StratosphereAvionics
 	FMC::~FMC()
 	{
 		delete[] dr_cache;
+	}
+
+	// Private member functions:
+
+	int FMC::get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry* out)
+	{
+		std::string arr_icao = avionics->get_fpln_arr_icao();
+		return nav_db->get_rnw_data(arr_icao, rwy_id, out);
 	}
 }
