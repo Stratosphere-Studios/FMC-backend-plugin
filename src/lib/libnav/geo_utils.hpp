@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 #pragma once
 
 #define _USE_MATH_DEFINES
@@ -9,6 +13,7 @@
 #define EARTH_RADIUS_NM 3441.0;
 #define NM_TO_M 1852;
 #define FT_TO_NM 1 / 6076.12;
+#define M_TO_FT 3.28084
 
 
 namespace geo

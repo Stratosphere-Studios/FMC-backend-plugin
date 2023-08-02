@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 #pragma once
 
 #include <iomanip>

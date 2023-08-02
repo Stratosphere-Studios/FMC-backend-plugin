@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <ctype.h>
 #include "str_utils.hpp"
 #include "geo_utils.hpp"
 
@@ -145,6 +146,8 @@ namespace libnav
 		std::unordered_map<std::string, std::unordered_map<std::string, runway_entry>>* rnw_db;
 
 		static bool does_db_exist(std::string path, std::string sign);
+
+		std::string normalize_rnw_id(std::string id);
 
 		double parse_runway(std::string line, std::vector<runway>* rnw); // Returns runway length in meters
 

@@ -359,6 +359,16 @@ namespace libnav
 		return false;
 	}
 
+	std::string ArptDB::normalize_rnw_id(std::string id)
+	{
+		// Add leading 0 when runway has 1 digit number
+		if (id.length() == 1 || (id.length() == 2 && std::isalpha(id[1])))
+		{
+			id = "0" + id;
+		}
+		return id;
+	}
+
 	double ArptDB::parse_runway(std::string line, std::vector<runway>* rnw)
 	{
 		std::stringstream s(line);
@@ -381,6 +391,9 @@ namespace libnav
 		rnw_2.data.start.lon_deg = rnw_1.data.end.lon_deg;
 		rnw_2.data.end.lat_deg = rnw_1.data.start.lat_deg;
 		rnw_2.data.end.lon_deg = rnw_1.data.start.lon_deg;
+
+		rnw_1.id = normalize_rnw_id(rnw_1.id);
+		rnw_2.id = normalize_rnw_id(rnw_2.id);
 
 		rnw->push_back(rnw_1);
 		rnw->push_back(rnw_2);
