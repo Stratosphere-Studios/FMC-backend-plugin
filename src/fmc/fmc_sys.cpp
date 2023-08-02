@@ -58,6 +58,12 @@ namespace StratosphereAvionics
 		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
 	}
 
+	libnav::airport AvionicsSys::get_fpln_arr_apt()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.arr_apt;
+	}
+
 	std::string AvionicsSys::get_fpln_arr_icao()
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
@@ -201,7 +207,7 @@ namespace StratosphereAvionics
 			switch (page)
 			{
 			case PAGE_REF_NAV_DATA:
-				update_ref_nav();
+				ref_nav_main_loop();
 			case PAGE_RTE1:
 				update_rte1();
 			}
