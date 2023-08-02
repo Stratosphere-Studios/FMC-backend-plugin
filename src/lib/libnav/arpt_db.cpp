@@ -172,7 +172,7 @@ namespace libnav
 	void ArptDB::write_to_arpt_db()
 	{
 		std::ofstream out(custom_arpt_db_path, std::ofstream::out);
-		out << "ARPTDB\n";
+		out << custom_arpt_db_sign << " " << std::to_string(DB_VERSION) << "\n";
 		while (arpt_queue.size() || write_arpt_db.load(std::memory_order_seq_cst))
 		{
 			if (arpt_queue.size())
@@ -195,7 +195,7 @@ namespace libnav
 	void ArptDB::write_to_rnw_db()
 	{
 		std::ofstream out(custom_rnw_db_path, std::ofstream::out);
-		out << "RNWDB\n";
+		out << custom_rnw_db_sign << " " << std::to_string(DB_VERSION) << "\n";
 		while (rnw_queue.size() || write_arpt_db.load(std::memory_order_seq_cst))
 		{
 			if (rnw_queue.size())
@@ -347,9 +347,14 @@ namespace libnav
 		std::ifstream file(path, std::ifstream::in);
 		if (file.is_open())
 		{
-			std::string line;
+			std::string line, tmp;
+			double ver = 0;
 			getline(file, line);
-			if (line == sign)
+			std::stringstream s(line);
+			
+			s >> tmp >> ver;
+
+			if (tmp == sign && ver == DB_VERSION)
 			{
 				file.close();
 				return true;
@@ -361,7 +366,6 @@ namespace libnav
 
 	std::string ArptDB::normalize_rnw_id(std::string id)
 	{
-		// Add leading 0 when runway has 1 digit number
 		if (id.length() == 1 || (id.length() == 2 && std::isalpha(id[1])))
 		{
 			id = "0" + id;

@@ -17,6 +17,7 @@
 #include "geo_utils.hpp"
 
 
+constexpr double DB_VERSION = 1.0; // Change this if you want to rebuild runway and airport data bases
 #define N_ARPT_LINES_IGNORE 3;
 #define N_RNW_ITEMS_IGNORE_BEGINNING 8; // Number of items to ignore at the beginning of the land runway declaration.
 #define N_RNW_ITEMS_IGNORE_END 5;
