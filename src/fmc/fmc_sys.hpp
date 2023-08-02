@@ -43,7 +43,7 @@ namespace StratosphereAvionics
 	struct fmc_ref_nav_out_drs
 	{
 		std::string poi_id, poi_type, poi_lat, poi_lon, poi_elevation,
-			poi_freq, poi_mag_var;
+			poi_freq, poi_mag_var, poi_length_ft, poi_length_m;
 	};
 
 	struct fmc_rte1_drs
@@ -130,6 +130,8 @@ namespace StratosphereAvionics
 
 		void set_fpln_arr_apt(libnav::airport apt);
 
+		libnav::airport get_fpln_arr_apt();
+
 		std::string get_fpln_arr_icao();
 
 		void set_fpln_dep_rnw(libnav::runway rnw);
@@ -177,15 +179,18 @@ namespace StratosphereAvionics
 
 		void reset_sel_navaid();
 
-		int update_ref_nav_poi_data(size_t n_arpts_found, size_t n_wpts_found, std::string icao,
-									libnav::airport_data arpt_found, std::vector<libnav::waypoint_entry> wpts_found);
+		int update_ref_nav_poi_data(int n_arpt_found, int n_rwys_found, int n_wpts_found, std::string icao,
+									libnav::airport_data arpt_found, libnav::runway_entry rwy_found,
+									std::vector<libnav::waypoint_entry> wpts_found);
 
 		void reset_ref_nav_poi_data(std::vector<std::string>* nav_drs);
 
 		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
 									int threshold, bool add_vor);
 
-		void update_ref_nav(); // Updates REF NAV DATA page
+		int update_ref_nav(const std::string icao); // Updates REF NAV DATA page
+
+		void ref_nav_main_loop(); // Updates REF NAV DATA page
 
 		void reset_ref_nav();
 

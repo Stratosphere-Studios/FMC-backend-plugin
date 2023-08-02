@@ -70,6 +70,7 @@ namespace StratosphereAvionics
 		}
 
 		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 0);
+		reset_sel_navaid();
 
 		if (user_idx != -1 && curr_subpage <= n_subpages)
 		{
