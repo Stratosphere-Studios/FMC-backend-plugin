@@ -6,6 +6,7 @@
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
+constexpr double POI_CACHE_TILE_SIZE_DEG = 5.0;
 
 fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs, 
 						   &int_arr_datarefs, &float_arr_datarefs, 
@@ -28,10 +29,10 @@ int data_refs_created = 0;
 float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon)
 {
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
-	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_out);
+	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, av_out, POI_CACHE_TILE_SIZE_DEG);
 
-	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out);
-	//fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out);
+	//fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out);
+	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out);
 
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
@@ -78,7 +79,7 @@ PLUGIN_API void	XPluginStop(void)
 		XPLMDebugString("777_FMS: Disabling\n");
 		avionics->sim_shutdown.store(true, std::memory_order_relaxed);
 
-		fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
+		//fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
 		fmc_r->sim_shutdown.store(true, std::memory_order_relaxed);
 
 		sim_databus->cleanup();
