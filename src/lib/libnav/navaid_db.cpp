@@ -4,20 +4,19 @@ namespace libnav
 {
 	bool WaypointEntryCompare::operator()(waypoint_entry w1, waypoint_entry w2)
 	{
-		double d1 = w1.pos.getGreatCircleDistanceNM(ac_pos);
-		double d2 = w2.pos.getGreatCircleDistanceNM(ac_pos);
+		double d1 = w1.pos.get_great_circle_distance_nm(ac_pos);
+		double d2 = w2.pos.get_great_circle_distance_nm(ac_pos);
 		return d1 < d2;
 	}
 
 	bool WaypointCompare::operator()(waypoint w1, waypoint w2)
 	{
-		double d1 = w1.data.pos.getGreatCircleDistanceNM(ac_pos);
-		double d2 = w2.data.pos.getGreatCircleDistanceNM(ac_pos);
+		double d1 = w1.data.pos.get_great_circle_distance_nm(ac_pos);
+		double d2 = w2.data.pos.get_great_circle_distance_nm(ac_pos);
 		return d1 < d2;
 	}
 
-	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path,
-		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db)
+	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path, wpt_db_t* wpt_db)
 	{
 		// Pre-defined stuff
 
@@ -303,5 +302,68 @@ namespace libnav
 		comp.ac_pos = p;
 
 		sort(vec->begin(), vec->end(), comp);
+	}
+};
+
+
+namespace radnav_util
+{
+	/*
+		This function calculates the quality ratio for a navaid.
+		Navaids are sorted by this ratio to determine the best 
+		suitable candidate(s) for radio navigation.
+	*/
+
+	void navaid_t::calc_qual(geo::point3d ac_pos)
+	{
+		if (data.navaid)
+		{
+			double lat_dist_nm = ac_pos.p.get_great_circle_distance_nm(data.pos);
+
+			if (lat_dist_nm)
+			{
+				double v_dist_nm = (ac_pos.alt_ft - data.navaid->elevation) * FT_TO_NM;
+				double slant_deg = atan(v_dist_nm / lat_dist_nm) * RAD_TO_DEG;
+
+				if (slant_deg > 0 && slant_deg < VOR_MAX_SLANT_ANGLE_DEG)
+				{
+					double true_dist_nm = sqrt(lat_dist_nm * lat_dist_nm + v_dist_nm * v_dist_nm);
+
+					qual = 1 - (true_dist_nm / data.navaid->max_recv);
+					return;
+				}
+			}
+		}
+		qual = -1;
+	}
+
+	/*
+		This function calculates a quality value for a pair of navaids.
+		This is useful when picking candidates for DME/DME position calculation.
+	*/
+
+	void navaid_pair_t::calc_qual(geo::point ac_pos)
+	{
+		if (n1 != nullptr && n2 != nullptr)
+		{
+			double b1 = n1->data.pos.get_great_circle_bearing_deg(ac_pos);
+			double b2 = n2->data.pos.get_great_circle_bearing_deg(ac_pos);
+			double phi = abs(b1 - b2);
+			if (phi > 180)
+				phi = 360 - phi;
+
+			if (phi > DME_DME_PHI_MIN_DEG && phi < DME_DME_PHI_MAX_DEG)
+			{
+				double min_qual = n1->qual;
+				if (n2->qual < min_qual)
+				{
+					min_qual = n2->qual;
+				}
+
+				qual = (min_qual + 1 - abs(90 - phi) / 90) / 2;
+				return;
+			}
+		}
+		qual = -1;
 	}
 }

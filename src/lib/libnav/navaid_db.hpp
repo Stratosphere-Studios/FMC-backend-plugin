@@ -12,6 +12,9 @@
 #include "geo_utils.hpp"
 
 
+constexpr double VOR_MAX_SLANT_ANGLE_DEG = 40;
+constexpr double DME_DME_PHI_MIN_DEG = 30;
+constexpr double DME_DME_PHI_MAX_DEG = 180 - DME_DME_PHI_MIN_DEG;
 #define N_NAVAID_LINES_IGNORE 3; //Number of lines at the beginning of the .dat file to ignore
 
 
@@ -52,6 +55,10 @@ namespace libnav
 		waypoint_entry data;
 	};
 
+	typedef std::vector<libnav::waypoint> wpt_tile_t;
+
+	typedef std::unordered_map<std::string, std::vector<libnav::waypoint_entry>> wpt_db_t;
+
 
 	class WaypointEntryCompare
 	{
@@ -71,8 +78,7 @@ namespace libnav
 	{
 	public:
 
-		NavaidDB(std::string wpt_path, std::string navaid_path,
-			std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db);
+		NavaidDB(std::string wpt_path, std::string navaid_path, wpt_db_t* wpt_db);
 
 		bool is_loaded();
 
@@ -102,7 +108,7 @@ namespace libnav
 		std::mutex wpt_db_mutex;
 		std::mutex navaid_db_mutex;
 
-		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_cache;
+		wpt_db_t* wpt_cache;
 
 		void add_to_wpt_cache(waypoint wpt);
 
@@ -121,11 +127,32 @@ namespace libnav
 
 namespace radnav_util
 {
-	struct navaid
+	struct navaid_t
 	{
 		std::string id;
 		libnav::waypoint_entry data;
-		double qual, time_blacklisted_sec;
-		bool is_blacklisted;
+		double qual;
+
+		/*
+			This function calculates the quality ratio for a navaid.
+			Navaids are sorted by this ratio to determine the best 
+			suitable candidate(s) for radio navigation.
+		*/
+
+		void calc_qual(geo::point3d ac_pos);
+	};
+
+	struct navaid_pair_t
+	{
+		navaid_t* n1;
+		navaid_t* n2;
+		double qual;
+
+		/*
+			This function calculates a quality value for a pair of navaids.
+			This is useful when picking candidates for DME/DME position calculation.
+		*/
+
+		void calc_qual(geo::point ac_pos);
 	};
 };
