@@ -1,4 +1,9 @@
 /*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
 	This header file contains definitions of classes, functions, etc 
 	used in the fmc implementation. Author: discord/bruh4096#4512
 */
@@ -7,7 +12,9 @@
 
 #include "dr_cache.hpp"
 #include "databus.hpp"
+#include "rad_nav.hpp"
 #include "nav_db.hpp"
+#include "timer.hpp"
 #include <cstring>
 
 
@@ -20,9 +27,24 @@ enum fmc_pages
 	PAGE_REF_NAV_DATA = 2
 };
 
+// Minimal distance to navaid for radio navigation.
+
+constexpr double min_navaid_dist_nm = 160; 
+
+// Period in seconds after which the radio navigation 
+// candidates will be re-examined
+
+constexpr double rad_nav_cand_update_time_sec = 5; 
+
 
 namespace StratosphereAvionics
 {
+	struct avionics_in_drs
+	{
+		std::string sim_baro_alt_ft1, sim_baro_alt_ft2, sim_baro_alt_ft3;
+		std::string sim_ac_lat_deg, sim_ac_lon_deg;
+	};
+
 	struct avionics_out_drs
 	{
 		std::string dep_icao, arr_icao;
@@ -30,6 +52,8 @@ namespace StratosphereAvionics
 
 		std::vector<std::string> excl_navaids;
 		std::vector<std::string> excl_vors;
+
+		navaid_tuner_out_drs nav_tuner;
 	};
 
 	struct fmc_ref_nav_in_drs
@@ -122,7 +146,10 @@ namespace StratosphereAvionics
 		libnav::NavaidDB* navaid_db;
 		libnav::NavDB* nav_db;
 
-		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out);
+
+		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, double cache_tile_size);
+
+		geo::point3d get_ac_pos();
 
 		void set_fpln_dep_apt(libnav::airport apt);
 
@@ -149,20 +176,34 @@ namespace StratosphereAvionics
 		~AvionicsSys();
 
 	private:
+		double tile_size;
+
+		avionics_in_drs in_drs;
 		avionics_out_drs out_drs;
 
 		std::mutex fpln_mutex;
 		std::mutex navaid_inhibit_mutex;
 		std::mutex vor_inhibit_mutex;
+		std::mutex ac_pos_mutex;
 
 		flightplan pln;
 
 		std::vector<std::string> navaid_inhibit = { "", "" };
 		std::vector<std::string> vor_inhibit = { "", "" };
+		
+		geo::point3d ac_pos;
+		geo::point3d ac_pos_last;
+
+		libtime::Timer* clock;
 
 		XPDataBus::DataRefCache* dr_cache;
+		NavaidTuner* radiomngr;
 
 		void update_load_status();
+
+		void update_ac_pos();
+
+		void update_navaid_cache();
 	};
 
 	class FMC

@@ -1,4 +1,9 @@
 /*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+ 
 	This source file contains the implementation of the fmc for 
 	B77W by stratosphere studios. Author: discord/bruh4096#4512
 */
@@ -16,8 +21,12 @@ namespace StratosphereAvionics
 
 	// Public member functions:
 
-	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out)
+	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, double cache_tile_size)
 	{
+		tile_size = cache_tile_size;
+		ac_pos_last = {};
+
+		in_drs = in;
 		out_drs = out;
 
 		xp_databus = databus;
@@ -36,6 +45,8 @@ namespace StratosphereAvionics
 		airports = {};
 		runways = {};
 
+		clock = new libtime::Timer();
+
 		// Initialize data bases
 
 		apt_db = new libnav::ArptDB(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
@@ -43,6 +54,16 @@ namespace StratosphereAvionics
 		nav_db = new libnav::NavDB(apt_db, navaid_db);
 
 		dr_cache = new XPDataBus::DataRefCache();
+
+		radiomngr = new NavaidTuner(databus, out_drs.nav_tuner, cache_tile_size, 
+								    min_navaid_dist_nm, rad_nav_cand_update_time_sec);
+	}
+
+	geo::point3d AvionicsSys::get_ac_pos()
+	{
+		std::lock_guard<std::mutex> lock(ac_pos_mutex);
+
+		return ac_pos;
 	}
 
 	std::string AvionicsSys::get_fpln_dep_icao()
@@ -126,7 +147,9 @@ namespace StratosphereAvionics
 
 	void AvionicsSys::update_sys()
 	{
+		update_ac_pos();
 
+		radiomngr->update(&waypoints, ac_pos, clock->get_curr_time());
 	}
 
 	void AvionicsSys::main_loop()
@@ -140,10 +163,12 @@ namespace StratosphereAvionics
 
 	AvionicsSys::~AvionicsSys()
 	{
+		delete[] radiomngr;
 		delete[] nav_db;
 		delete[] apt_db;
 		delete[] navaid_db;
 		delete[] dr_cache;
+		delete[] clock;
 	}
 
 	// Private member functions:
@@ -161,6 +186,17 @@ namespace StratosphereAvionics
 			}
 		}
 		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 0);
+	}
+
+	void AvionicsSys::update_ac_pos()
+	{
+		double baro_ft_1 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		double baro_ft_2 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		double baro_ft_3 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		std::lock_guard<std::mutex> lock(ac_pos_mutex);
+		ac_pos.p.lat_deg = xp_databus->get_datad(in_drs.sim_ac_lat_deg);
+		ac_pos.p.lon_deg = xp_databus->get_datad(in_drs.sim_ac_lon_deg);
+		ac_pos.alt_ft = (baro_ft_1 + baro_ft_2 + baro_ft_3) / 3;
 	}
 
 	// FMC definitions:
