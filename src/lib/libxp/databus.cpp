@@ -137,15 +137,15 @@ namespace XPDataBus
 	{
 		generic_val val = get_data(dr_name, offset);
 		int ret_val = 0;
-		if (val.val_type == xplmType_Int)
+		if (xplmType_Int & val.val_type)
 		{
 			ret_val = val.int_val;
 		}
-		else if (val.val_type == xplmType_Float)
+		else if (xplmType_Float & val.val_type)
 		{
 			ret_val = int(val.float_val);
 		}
-		else if (val.val_type == xplmType_Double)
+		else if (xplmType_Double & val.val_type)
 		{
 			ret_val = int(val.double_val);
 		}
@@ -156,18 +156,20 @@ namespace XPDataBus
 	{
 		generic_val val = get_data(dr_name, offset);
 		float ret_val = 0;
-		if (val.val_type == xplmType_Int)
-		{
-			ret_val = float(val.int_val);
-		}
-		else if (val.val_type == xplmType_Float)
+
+		if (xplmType_Float & val.val_type)
 		{
 			ret_val = val.float_val;
 		}
-		else if (val.val_type == xplmType_Double)
+		else if (xplmType_Double & val.val_type)
 		{
 			ret_val = float(val.double_val);
 		}
+		else if (xplmType_Int & val.val_type)
+		{
+			ret_val = float(val.int_val);
+		}
+		
 		return ret_val;
 	}
 
@@ -175,18 +177,20 @@ namespace XPDataBus
 	{
 		generic_val val = get_data(dr_name, offset);
 		double ret_val = 0;
-		if (val.val_type == xplmType_Int)
-		{
-			ret_val = double(val.int_val);
-		}
-		else if (val.val_type == xplmType_Float)
-		{
-			ret_val = double(val.float_val);
-		}
-		else if (val.val_type == xplmType_Double)
+
+		if (xplmType_Double & val.val_type)
 		{
 			ret_val = val.double_val;
 		}
+		else if (xplmType_Float & val.val_type)
+		{
+			ret_val = double(val.float_val);
+		}
+		else if (xplmType_Int & val.val_type)
+		{
+			ret_val = double(val.int_val);
+		}
+		
 		return ret_val;
 	}
 
@@ -247,26 +251,10 @@ namespace XPDataBus
 		/*
 		* This function gets a value of a dataref that isn't owned by this plugin
 		*/
+		int dr_set = 0;
 		data_ref_entry ref = data_refs[*dr_name];
-		if (ref.dr_type == xplmType_Int)
-		{
-			out->val_type = xplmType_Int;
-			out->int_val = XPLMGetDatai(ref.ref);
-			return 1;
-		}
-		else if (ref.dr_type == xplmType_Float)
-		{
-			out->val_type = xplmType_Float;
-			out->float_val = XPLMGetDataf(ref.ref);
-			return 1;
-		}
-		else if (ref.dr_type == xplmType_Double)
-		{
-			out->val_type = xplmType_Double;
-			out->double_val = XPLMGetDatad(ref.ref);
-			return 1;
-		}
-		else if (xplmType_IntArray & ref.dr_type)
+
+		if (xplmType_IntArray & ref.dr_type)
 		{
 			out->val_type = xplmType_Int;
 			return XPLMGetDatavi(ref.ref, &out->int_val, out->offset, 1);
@@ -276,7 +264,27 @@ namespace XPDataBus
 			out->val_type = xplmType_Float;
 			return XPLMGetDatavf(ref.ref, &out->float_val, out->offset, 1);
 		}
-		return 0;
+
+		if (xplmType_Int & ref.dr_type)
+		{
+			out->val_type |= xplmType_Int;
+			out->int_val = XPLMGetDatai(ref.ref);
+			dr_set = 1;
+		}
+		if (xplmType_Float & ref.dr_type)
+		{
+			out->val_type |= xplmType_Float;
+			out->float_val = XPLMGetDataf(ref.ref);
+			dr_set = 1;
+		}
+		if (xplmType_Double & ref.dr_type)
+		{
+			out->val_type |= xplmType_Double;
+			out->double_val = XPLMGetDatad(ref.ref);
+			dr_set = 1;
+		}
+		
+		return dr_set;
 	}
 
 	int DataBus::get_custom_data_ref_value(std::string* dr_name, generic_val* out)
