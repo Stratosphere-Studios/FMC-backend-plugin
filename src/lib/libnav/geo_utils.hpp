@@ -32,7 +32,7 @@ namespace geo
 	{
 		double lat_deg, lon_deg;
 
-		double getGreatCircleBearingDeg(point other)
+		double get_great_circle_bearing_deg(point other)
 		{
 			double lat1_rad = lat_deg * DEG_TO_RAD;
 			double lon1_rad = lon_deg * DEG_TO_RAD;
@@ -41,9 +41,9 @@ namespace geo
 			double dlon = lon2_rad - lon1_rad;
 			double a = sin(dlon) * cos(lat2_rad);
 			double b = cos(lat1_rad) * sin(lat2_rad) - sin(lat1_rad) * cos(lat2_rad) * cos(dlon);
-			if (a == 0)
+			if (b == 0)
 			{
-				return -1;
+				return 0;
 			}
 			else
 			{
@@ -52,7 +52,7 @@ namespace geo
 			}
 		}
 
-		double getGreatCircleDistanceNM(point other)
+		double get_great_circle_distance_nm(point other)
 		{
 			double lat1_rad = lat_deg * DEG_TO_RAD;
 			double lon1_rad = lon_deg * DEG_TO_RAD;
@@ -65,6 +65,20 @@ namespace geo
 			double a = (a1 * a1) + cos(lat1_rad) * cos(lat2_rad) * (a2 * a2);
 			double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 			return c * EARTH_RADIUS_NM;
+		}
+	};
+
+	struct point3d
+	{
+		point p;
+		double alt_ft;
+
+		double get_true_dist_nm(point3d other)
+		{
+			double lat_dist_nm = p.get_great_circle_distance_nm(other.p);
+			double v_dist_nm = (alt_ft - other.alt_ft) * FT_TO_NM;
+
+			return sqrt(lat_dist_nm * lat_dist_nm + v_dist_nm * v_dist_nm);
 		}
 	};
 }

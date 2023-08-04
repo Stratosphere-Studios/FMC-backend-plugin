@@ -339,7 +339,6 @@ namespace libnav
 		return 0;
 	}
 
-
 	// Private member functions:
 
 	bool ArptDB::does_db_exist(std::string path, std::string sign)

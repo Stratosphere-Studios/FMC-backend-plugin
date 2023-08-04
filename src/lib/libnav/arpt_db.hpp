@@ -45,7 +45,7 @@ namespace libnav
 		{
 			if (impl_length_m <= 0)
 			{
-				impl_length_m = start.getGreatCircleDistanceNM(end) * NM_TO_M;
+				impl_length_m = start.get_great_circle_distance_nm(end) * NM_TO_M;
 			}
 			return impl_length_m;
 		}
