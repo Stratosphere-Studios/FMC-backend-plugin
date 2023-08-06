@@ -37,6 +37,32 @@ namespace StratosphereAvionics
 		navaid_cache = {};
 	}
 
+	void NavaidTuner::add_to_black_list(libnav::waypoint* wpt, double bl_dur)
+	{
+		std::string key = get_black_list_key(wpt);
+
+		std::lock_guard<std::mutex> lock(black_list_mutex);
+
+		if (black_list.find(key) == black_list.end())
+		{
+			std::pair<std::string, double> tmp = std::make_pair(key, bl_dur);
+			black_list.insert(tmp);
+		}
+		else
+		{
+			black_list.at(key) = bl_dur;
+		}
+	}
+
+	void NavaidTuner::remove_from_black_list(libnav::waypoint* wpt)
+	{
+		std::string key = get_black_list_key(wpt);
+
+		std::lock_guard<std::mutex> lock(black_list_mutex);
+
+		black_list.erase(key);
+	}
+
 	void NavaidTuner::set_vor_dme_cand(radnav_util::navaid_t cand)
 	{
 		std::lock_guard<std::mutex> lock(vor_dme_cand_mutex);
@@ -117,8 +143,9 @@ namespace StratosphereAvionics
 		The following member function updates VOR DME and DME DME candidates.
 	*/
 
-	void NavaidTuner::update_rad_nav_cand(geo::point3d ac_pos)
+	void NavaidTuner::update_rad_nav_cand(geo::point3d ac_pos, double c_time_sec)
 	{
+		radnav_util::navaid_t vor_dme_cand;
 		std::vector<radnav_util::navaid_t> navaids;
 		
 		// Add all navaids within min_navaid_dist_nm miles from the 
@@ -127,14 +154,18 @@ namespace StratosphereAvionics
 		for (int i = 0; i < navaid_cache.size(); i++)
 		{
 			libnav::waypoint tmp = navaid_cache.at(i);
-			geo::point3d tmp_pos = { tmp.data.pos, tmp.data.navaid->elevation };
-			double dist = tmp_pos.get_true_dist_nm(ac_pos);
 
-			if (dist <= min_navaid_dist_nm)
+			if (!is_black_listed(&tmp, c_time_sec))
 			{
-				radnav_util::navaid_t new_navaid = { tmp.id, tmp.data, 0 };
-				new_navaid.calc_qual(ac_pos);
-				navaids.push_back(new_navaid);
+				geo::point3d tmp_pos = { tmp.data.pos, tmp.data.navaid->elevation };
+				double dist = tmp_pos.get_true_dist_nm(ac_pos);
+
+				if (dist <= min_navaid_dist_nm)
+				{
+					radnav_util::navaid_t new_navaid = { tmp.id, tmp.data, 0 };
+					new_navaid.calc_qual(ac_pos);
+					navaids.push_back(new_navaid);
+				}
 			}
 		}
 
@@ -143,16 +174,26 @@ namespace StratosphereAvionics
 		std::sort(navaids.begin(), navaids.end(), 
 				  [](radnav_util::navaid_t n1, radnav_util::navaid_t n2) -> bool { return n1.qual > n2.qual; });
 
+		int j = 0;
+		for (int i = 0; i < navaids.size(); i++)
+		{
+			if (navaids.at(i).data.type == NAV_VOR_DME)
+			{
+				if (j == 0)
+				{
+					NavaidTuner::set_vor_dme_cand(navaids.at(i));
+				}
+				xp_databus->set_data_s(out_drs.vor_dme_cand_data.at(j), navaids.at(i).id + " " + std::to_string(navaids.at(i).qual));
+				j++;
+			}
+			if (j == out_drs.vor_dme_cand_data.size())
+			{
+				break;
+			}
+		}
 		NavaidTuner::set_vor_dme_cand(navaids.at(0));
 
 		update_dme_dme_cand(ac_pos.p, &navaids);
-
-		// Set some DEBUG-ONLY datarefs
-
-		for (int i = 0; i < out_drs.vor_dme_cand_data.size(); i++)
-		{
-			xp_databus->set_data_s(out_drs.vor_dme_cand_data.at(i), navaids.at(i).id + " " + std::to_string(navaids.at(i).qual));
-		}
 	}
 
 	void NavaidTuner::update(libnav::wpt_db_t* ptr, geo::point3d ac_pos, double c_time_sec)
@@ -173,8 +214,8 @@ namespace StratosphereAvionics
 			cand_update_last_sec = c_time_sec;
 
 			std::future<void> f = std::async(std::launch::async, 
-											 [](NavaidTuner* ptr, geo::point3d pos) 
-											 {ptr->update_rad_nav_cand(pos); }, this, ac_pos);
+											 [](NavaidTuner* ptr, geo::point3d pos, double c_time_sec)
+											 {ptr->update_rad_nav_cand(pos, c_time_sec); }, this, ac_pos, c_time_sec);
 		}
 	}
 
@@ -185,15 +226,21 @@ namespace StratosphereAvionics
 
 	// Private functions:
 
-	bool NavaidTuner::is_black_listed(libnav::waypoint wpt, double c_time_sec)
+	std::string NavaidTuner::get_black_list_key(libnav::waypoint* wpt)
 	{
-		if (wpt.data.navaid)
+		return wpt->id + std::to_string(wpt->data.navaid->freq);
+	}
+
+	bool NavaidTuner::is_black_listed(libnav::waypoint* wpt, double c_time_sec)
+	{
+		if (wpt->data.navaid)
 		{
 			std::lock_guard<std::mutex> lock(black_list_mutex);
-			std::string key = wpt.id + std::to_string(wpt.data.navaid->freq);
+			std::string key = get_black_list_key(wpt);
 			if (black_list.find(key) != black_list.end())
 			{
-				if (black_list.at(key) > c_time_sec)
+				if (black_list.at(key) > c_time_sec || 
+					black_list.at(key) == NAVAID_PROHIBIT_PERMANENT)
 				{
 					return true;
 				}
@@ -213,16 +260,19 @@ namespace StratosphereAvionics
 
 		for (auto& it : *wpt_db)
 		{
-			for (int i = 0; i < it.second.size(); i++)
+			if (it.first.length() < ILS_NAVAID_ID_LENGTH) // ILS components aren't welcome
 			{
-				libnav::waypoint_entry tmp = it.second.at(i);
-				if (tmp.navaid && (tmp.type == NAV_DME || tmp.type == NAV_DME_ONLY || tmp.type == NAV_VOR_DME))
+				for (int i = 0; i < it.second.size(); i++)
 				{
-					if (abs(tmp.pos.lat_deg - ac_pos.lat_deg) <= cache_tile_size &&
-						abs(tmp.pos.lon_deg - ac_pos.lon_deg) <= cache_tile_size)
+					libnav::waypoint_entry tmp = it.second.at(i);
+					if (tmp.navaid && (tmp.type == NAV_DME || tmp.type == NAV_DME_ONLY || tmp.type == NAV_VOR_DME))
 					{
-						libnav::waypoint tmp_wpt = { it.first, tmp };
-						navaid_cache.push_back(tmp_wpt);
+						if (abs(tmp.pos.lat_deg - ac_pos.lat_deg) <= cache_tile_size &&
+							abs(tmp.pos.lon_deg - ac_pos.lon_deg) <= cache_tile_size)
+						{
+							libnav::waypoint tmp_wpt = { it.first, tmp };
+							navaid_cache.push_back(tmp_wpt);
+						}
 					}
 				}
 			}

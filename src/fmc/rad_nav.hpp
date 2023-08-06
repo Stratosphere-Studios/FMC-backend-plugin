@@ -14,6 +14,8 @@
 
 constexpr int N_DME_DME_CAND = 2;
 constexpr int N_DME_DME_STA = 32; // Number of DMEs used to make pairs(for DME/DME position)
+constexpr double NAVAID_PROHIBIT_PERMANENT = -1;
+constexpr int ILS_NAVAID_ID_LENGTH = 4;
 
 
 namespace StratosphereAvionics
@@ -38,6 +40,10 @@ namespace StratosphereAvionics
 		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_out_drs out, 
 					double tile_size, double navaid_thresh_nm, double dur_sec);
 
+		void add_to_black_list(libnav::waypoint* wpt, double bl_dur = NAVAID_PROHIBIT_PERMANENT);
+
+		void remove_from_black_list(libnav::waypoint* wpt);
+
 		void set_vor_dme_cand(radnav_util::navaid_t cand);
 
 		radnav_util::navaid_t get_vor_dme_cand();
@@ -52,7 +58,7 @@ namespace StratosphereAvionics
 			The following member function updates VOR DME and DME DME candidates.
 		*/
 
-		void update_rad_nav_cand(geo::point3d ac_pos);
+		void update_rad_nav_cand(geo::point3d ac_pos, double c_time_sec);
 
 		void update(libnav::wpt_db_t* ptr, geo::point3d ac_pos, double c_time_sec);
 
@@ -81,7 +87,9 @@ namespace StratosphereAvionics
 		navaid_tuner_out_drs out_drs;
 
 
-		bool is_black_listed(libnav::waypoint wpt, double c_time_sec);
+		static std::string get_black_list_key(libnav::waypoint* wpt);
+
+		bool is_black_listed(libnav::waypoint* wpt, double c_time_sec);
 		
 		void update_navaid_cache(geo::point ac_pos);
 	};

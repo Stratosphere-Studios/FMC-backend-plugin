@@ -116,15 +116,19 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(navaid_inhibit_mutex);
 		if (idx >= 0 && idx < navaid_inhibit.size())
 		{
-			navaid_inhibit[idx] = id;
+			rm_from_bl(navaid_inhibit[idx]); // Remove all previously blacklisted navaids
+
 			if (id != "")
 			{
+				add_to_bl(id);
+
 				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
 			}
 			else
 			{
 				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), "\0", -1);
 			}
+			navaid_inhibit[idx] = id;
 		}
 	}
 
@@ -133,15 +137,19 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(vor_inhibit_mutex);
 		if (idx >= 0 && idx < vor_inhibit.size())
 		{
-			vor_inhibit[idx] = id;
+			rm_from_bl(vor_inhibit[idx]); // Remove all previously blacklisted navaids
+			
 			if (id != "")
 			{
+				add_to_bl(id);
+
 				xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
 			}
 			else
 			{
 				xp_databus->set_data_s(out_drs.excl_vors.at(idx), "\0", -1);
 			}
+			vor_inhibit[idx] = id;
 		}
 	}
 
@@ -197,6 +205,38 @@ namespace StratosphereAvionics
 		ac_pos.p.lat_deg = xp_databus->get_datad(in_drs.sim_ac_lat_deg);
 		ac_pos.p.lon_deg = xp_databus->get_datad(in_drs.sim_ac_lon_deg);
 		ac_pos.alt_ft = (baro_ft_1 + baro_ft_2 + baro_ft_3) / 3;
+	}
+
+	/*
+		Blacklists all navaids with given id forever.
+	*/
+
+	void AvionicsSys::add_to_bl(std::string id)
+	{
+		std::vector<libnav::waypoint_entry> entries;
+		nav_db->get_wpt_data(id, &entries);
+
+		for (int i = 0; i < entries.size(); i++)
+		{
+			libnav::waypoint tmp = { id, entries.at(i) };
+			radiomngr->add_to_black_list(&tmp);
+		}
+	}
+
+	/*
+		Removes all navaids with given id from black list.
+	*/
+
+	void AvionicsSys::rm_from_bl(std::string id)
+	{
+		std::vector<libnav::waypoint_entry> entries;
+		nav_db->get_wpt_data(id, &entries);
+
+		for (int i = 0; i < entries.size(); i++)
+		{
+			libnav::waypoint tmp = { id, entries.at(i) };
+			radiomngr->remove_from_black_list(&tmp);
+		}
 	}
 
 	// FMC definitions:

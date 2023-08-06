@@ -203,7 +203,17 @@ namespace StratosphereAvionics
 
 		void update_ac_pos();
 
-		void update_navaid_cache();
+		/*
+			Blacklists all navaids with given id forever.
+		*/
+
+		void add_to_bl(std::string id);
+
+		/*
+			Removes all navaids with given id from black list.
+		*/
+
+		void rm_from_bl(std::string id);
 	};
 
 	class FMC
