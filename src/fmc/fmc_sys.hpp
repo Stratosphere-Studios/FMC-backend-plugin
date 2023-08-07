@@ -147,7 +147,8 @@ namespace StratosphereAvionics
 		libnav::NavDB* nav_db;
 
 
-		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, double cache_tile_size);
+		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, 
+					double cache_tile_size, int hz);
 
 		geo::point3d get_ac_pos();
 
@@ -176,6 +177,7 @@ namespace StratosphereAvionics
 		~AvionicsSys();
 
 	private:
+		int n_refresh_hz;
 		double tile_size;
 
 		avionics_in_drs in_drs;
@@ -221,7 +223,7 @@ namespace StratosphereAvionics
 	public:
 		std::atomic<bool> sim_shutdown{ false };
 
-		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out);
+		FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out, int hz);
 
 		geo::point get_ac_pos();
 
@@ -262,6 +264,8 @@ namespace StratosphereAvionics
 		~FMC();
 
 	private:
+		int n_refresh_hz;
+
 		libnav::NavDB* nav_db;
 		std::shared_ptr<AvionicsSys> avionics;
 		fmc_in_drs in_drs;

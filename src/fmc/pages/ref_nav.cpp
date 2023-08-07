@@ -233,6 +233,8 @@ namespace StratosphereAvionics
 			}
 
 			update_scratch_msg();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 		reset_ref_nav();
 	}

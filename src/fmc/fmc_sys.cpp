@@ -21,8 +21,10 @@ namespace StratosphereAvionics
 
 	// Public member functions:
 
-	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, double cache_tile_size)
+	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, 
+							 double cache_tile_size, int hz)
 	{
+		n_refresh_hz = hz;
 		tile_size = cache_tile_size;
 		ac_pos_last = {};
 
@@ -166,6 +168,8 @@ namespace StratosphereAvionics
 		while (!sim_shutdown.load(std::memory_order_relaxed))
 		{
 			update_sys();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 	}
 
@@ -243,8 +247,10 @@ namespace StratosphereAvionics
 
 	// Public member functions:
 
-	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out)
+	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out, int hz)
 	{
+		n_refresh_hz = hz;
+
 		avionics = av;
 		nav_db = avionics->nav_db;
 		in_drs = in;

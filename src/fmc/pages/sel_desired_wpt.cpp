@@ -79,6 +79,8 @@ namespace StratosphereAvionics
 
 			curr_subpage = libnav::clamp(xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page), n_subpages, 1);
 			user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 
 		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 0);
