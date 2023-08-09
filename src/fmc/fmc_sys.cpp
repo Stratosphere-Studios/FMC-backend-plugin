@@ -57,8 +57,9 @@ namespace StratosphereAvionics
 
 		dr_cache = new XPDataBus::DataRefCache();
 
-		radiomngr = new NavaidTuner(databus, out_drs.nav_tuner, cache_tile_size, 
-								    min_navaid_dist_nm, rad_nav_cand_update_time_sec);
+		navaid_tuner = new NavaidTuner(databus, in_drs.nav_tuner, rad_nav_cand_update_time_sec);
+		navaid_selector = new NavaidSelector(databus, navaid_tuner, out_drs.nav_selector, cache_tile_size,
+										     min_navaid_dist_nm, rad_nav_cand_update_time_sec);
 	}
 
 	geo::point3d AvionicsSys::get_ac_pos()
@@ -159,7 +160,7 @@ namespace StratosphereAvionics
 	{
 		update_ac_pos();
 
-		radiomngr->update(&waypoints, ac_pos, clock->get_curr_time());
+		navaid_selector->update(&waypoints, ac_pos, clock->get_curr_time());
 	}
 
 	void AvionicsSys::main_loop()
@@ -175,7 +176,8 @@ namespace StratosphereAvionics
 
 	AvionicsSys::~AvionicsSys()
 	{
-		delete[] radiomngr;
+		delete[] navaid_selector;
+		delete[] navaid_tuner;
 		delete[] nav_db;
 		delete[] apt_db;
 		delete[] navaid_db;
@@ -188,7 +190,7 @@ namespace StratosphereAvionics
 	void AvionicsSys::update_load_status()
 	{
 		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 1);
-		if (!sim_shutdown.load(std::memory_order_seq_cst))
+		if (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
 			bool sts = nav_db->is_loaded();
 			if (!sts)
@@ -223,7 +225,7 @@ namespace StratosphereAvionics
 		for (int i = 0; i < entries.size(); i++)
 		{
 			libnav::waypoint tmp = { id, entries.at(i) };
-			radiomngr->add_to_black_list(&tmp);
+			navaid_tuner->black_list->add_to_black_list(&tmp);
 		}
 	}
 
@@ -239,7 +241,7 @@ namespace StratosphereAvionics
 		for (int i = 0; i < entries.size(); i++)
 		{
 			libnav::waypoint tmp = { id, entries.at(i) };
-			radiomngr->remove_from_black_list(&tmp);
+			navaid_tuner->black_list->remove_from_black_list(&tmp);
 		}
 	}
 
@@ -283,7 +285,7 @@ namespace StratosphereAvionics
 
 	void FMC::main_loop()
 	{
-		while (!sim_shutdown.load(std::memory_order_relaxed))
+		while (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
 			int page = xp_databus->get_datai(in_drs.curr_page);
 			switch (page)

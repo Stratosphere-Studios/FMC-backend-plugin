@@ -34,7 +34,7 @@ constexpr double min_navaid_dist_nm = 160;
 // Period in seconds after which the radio navigation 
 // candidates will be re-examined
 
-constexpr double rad_nav_cand_update_time_sec = 5; 
+constexpr int rad_nav_cand_update_time_sec = 5; 
 
 
 namespace StratosphereAvionics
@@ -43,6 +43,8 @@ namespace StratosphereAvionics
 	{
 		std::string sim_baro_alt_ft1, sim_baro_alt_ft2, sim_baro_alt_ft3;
 		std::string sim_ac_lat_deg, sim_ac_lon_deg;
+
+		navaid_tuner_in_drs nav_tuner;
 	};
 
 	struct avionics_out_drs
@@ -53,7 +55,7 @@ namespace StratosphereAvionics
 		std::vector<std::string> excl_navaids;
 		std::vector<std::string> excl_vors;
 
-		navaid_tuner_out_drs nav_tuner;
+		navaid_selector_out_drs nav_selector;
 	};
 
 	struct fmc_ref_nav_in_drs
@@ -199,7 +201,8 @@ namespace StratosphereAvionics
 		libtime::Timer* clock;
 
 		XPDataBus::DataRefCache* dr_cache;
-		NavaidTuner* radiomngr;
+		NavaidTuner* navaid_tuner;
+		NavaidSelector* navaid_selector;
 
 		void update_load_status();
 
