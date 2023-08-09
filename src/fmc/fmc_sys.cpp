@@ -160,6 +160,8 @@ namespace StratosphereAvionics
 	{
 		update_ac_pos();
 
+		navaid_tuner->set_ac_pos(ac_pos);
+
 		navaid_selector->update(&waypoints, ac_pos, clock->get_curr_time());
 	}
 
