@@ -322,15 +322,19 @@ namespace radnav_util
 
 			if (lat_dist_nm)
 			{
-				double v_dist_nm = (ac_pos.alt_ft - data.navaid->elevation) * FT_TO_NM;
+				double v_dist_nm = abs(ac_pos.alt_ft - data.navaid->elevation) * FT_TO_NM;
 				double slant_deg = atan(v_dist_nm / lat_dist_nm) * RAD_TO_DEG;
 
 				if (slant_deg > 0 && slant_deg < VOR_MAX_SLANT_ANGLE_DEG)
 				{
 					double true_dist_nm = sqrt(lat_dist_nm * lat_dist_nm + v_dist_nm * v_dist_nm);
 
-					qual = 1 - (true_dist_nm / data.navaid->max_recv);
-					return;
+					double tmp = 1 - (true_dist_nm / data.navaid->max_recv);
+					if (tmp >= 0)
+					{
+						qual = tmp;
+						return;
+					}
 				}
 			}
 		}
