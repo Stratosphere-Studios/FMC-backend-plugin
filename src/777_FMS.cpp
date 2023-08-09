@@ -80,10 +80,10 @@ PLUGIN_API void	XPluginStop(void)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
 
-		//fmc_l->sim_shutdown.store(true, std::memory_order_relaxed);
-		fmc_r->sim_shutdown.store(true, std::memory_order_relaxed);
+		//fmc_l->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
+		fmc_r->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
-		avionics->sim_shutdown.store(true, std::memory_order_relaxed);
+		avionics->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
 		sim_databus->cleanup();
 		//fmc_l_thread->join();
