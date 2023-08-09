@@ -12,6 +12,7 @@
 #include "nav_db.hpp"
 #include "databus.hpp"
 #include "timer.hpp"
+#include <cstring>
 
 
 namespace StratosphereAvionics
@@ -19,6 +20,7 @@ namespace StratosphereAvionics
 	constexpr int N_DME_DME_CAND = 2;
 	constexpr int N_DME_DME_STA = 32; // Number of DMEs used to make pairs(for DME/DME position)
 	constexpr double NAVAID_PROHIBIT_PERMANENT = -1;
+	constexpr double NAVAID_MAX_QUAL_DIFF = 0.2; // If the difference in quality between candidate and current station is greater than this, the candidate(s) gets tuned.
 	constexpr int ILS_NAVAID_ID_LENGTH = 4;
 	
 	constexpr int N_VOR_DME_RADIOS = 2; // Number of radios auto-tuned for VOR/DME position estimation
@@ -51,6 +53,8 @@ namespace StratosphereAvionics
 
 
 		vhf_radio_t(std::shared_ptr<XPDataBus::DataBus> databus, radio_drs_t drs);
+
+		void tune(radnav_util::navaid_t new_navaid);
 
 		bool is_sig_recv();
 
@@ -105,6 +109,11 @@ namespace StratosphereAvionics
 
 		BlackList* black_list;
 
+		radnav_util::navaid_t vor_dme_cand;
+
+		radnav_util::navaid_pair_t dme_dme_cand_pair;
+
+
 		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, int ut);
 
 		bool is_black_listed(libnav::waypoint* wpt);
@@ -142,16 +151,13 @@ namespace StratosphereAvionics
 
 		radnav_util::navaid_t* dme_dme_cand;
 
-		radnav_util::navaid_t vor_dme_cand;
-
-		radnav_util::navaid_pair_t dme_dme_cand_pair;
-
 		int* vor_dme_radio_modes;
 		std::vector<vhf_radio_t> vor_dme_radios;
 		std::vector<vhf_radio_t> dme_dme_radios;
 
 		libtime::Timer* main_timer;
 	};
+
 
 	class NavaidSelector
 	{

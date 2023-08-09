@@ -24,6 +24,16 @@ namespace StratosphereAvionics
 		last_tune_time_sec = 0;
 	}
 
+	void vhf_radio_t::tune(radnav_util::navaid_t new_navaid)
+	{
+		libnav::navaid_entry* navaid_data = new_navaid.data.navaid;
+		if (navaid_data) // Make sure the pointer to navaid data isn't null.
+		{
+			tuned_navaid = new_navaid;
+			xp_databus->set_datai(dr_list.freq, int(navaid_data->freq), dr_list.freq_idx);
+		}
+	}
+
 	bool vhf_radio_t::is_sig_recv()
 	{
 		bool vor_recv = false;
@@ -140,6 +150,8 @@ namespace StratosphereAvionics
 
 	NavaidTuner::NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, int freq)
 	{
+		ac_pos = {};
+
 		xp_databus = databus;
 		in_drs = in;
 		n_update_freq_hz = freq;
@@ -217,7 +229,24 @@ namespace StratosphereAvionics
 
 	void NavaidTuner::set_vor_dme_radios()
 	{
+		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
+		{
+			int mode = vor_dme_radio_modes[i];
 
+			if (mode == NAV_VHF_AUTO)
+			{
+				int check_val = memcmp(&vor_dme_radios[i].tuned_navaid, &vor_dme_cand, sizeof(radnav_util::navaid_t));
+				if (check_val) // Proceed to compare qualities if the tuned navaid doesn't match the current navaid.
+				{
+					geo::point3d tmp_ac_pos = get_ac_pos();
+					double curr_qual = vor_dme_radios[i].get_tuned_qual(tmp_ac_pos);
+					if (vor_dme_cand.qual - curr_qual > NAVAID_MAX_QUAL_DIFF)
+					{
+						vor_dme_radios[i].tune(vor_dme_cand);
+					}
+				}
+			}
+		}
 	}
 
 	void NavaidTuner::main_loop()
