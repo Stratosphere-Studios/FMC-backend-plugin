@@ -83,7 +83,7 @@ namespace geo
 		double tmp_lon = atan2(sin(brng_rad) * sin(ang_dist_rad) * cos(ref_lat_rad), 
 							   cos(ang_dist_rad)-sin(ref_lat_rad) * sin(tmp_lat));
 		ret.lat_deg = tmp_lat * RAD_TO_DEG;
-		ret.lon_deg = rad_to_pos_deg(ref_lon_rad + tmp_lon + M_PI) - 160;
+		ret.lon_deg = (ref_lon_rad + tmp_lon) * RAD_TO_DEG;
 
 		return ret;
 	}
