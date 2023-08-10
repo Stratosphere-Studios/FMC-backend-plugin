@@ -309,6 +309,53 @@ namespace libnav
 namespace radnav_util
 {
 	/*
+		The following function returns a fom in nm for a DME using a formula
+		from RTCA DO-236C appendix C-3. The only argument is the total distance to
+		the station.
+	*/
+
+	inline double get_dme_fom(double dist_nm)
+	{
+		double max_val = std::pow(0.085, 2);
+		double tmp_val = std::pow(0.00125 * dist_nm, 2);
+		if (max_val < tmp_val)
+		{
+			max_val = tmp_val;
+		}
+		double variance = std::pow(0.05, 2) + max_val;
+		// Now convert variance to FOM(standard_deviation * 2)
+		return sqrt(variance) * 2;
+	}
+
+	/*
+		The following function returns a fom in nm for a VOR using a formula
+		from RTCA DO-236C appendix C-2.The only argument is the total distance to
+		the station.
+	*/
+
+	inline double get_vor_fom(double dist_nm)
+	{
+		double variance = std::pow((0.0122 * dist_nm), 2) + std::pow((0.0175 * dist_nm), 2);
+		return sqrt(variance) * 2;
+	}
+
+	/*
+		The following function returns a fom in nm for a VOR DME station.
+		It accepts the total distance to the station as its only argument.
+	*/
+
+	inline double get_vor_dme_fom(double dist_nm)
+	{
+		double dme_fom = get_dme_fom(dist_nm);
+		double vor_fom = get_vor_fom(dist_nm);
+		if (vor_fom > dme_fom)
+		{
+			return vor_fom;
+		}
+		return dme_fom;
+	}
+
+	/*
 		This function calculates the quality ratio for a navaid.
 		Navaids are sorted by this ratio to determine the best 
 		suitable candidate(s) for radio navigation.

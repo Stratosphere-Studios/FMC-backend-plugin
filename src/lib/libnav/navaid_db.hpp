@@ -127,6 +127,30 @@ namespace libnav
 
 namespace radnav_util
 {
+	/*
+		The following function returns a fom in nm for a DME using a formula
+		from RTCA DO-236C appendix C-3. The only argument is the total distance to 
+		the station.
+	*/
+
+	inline double get_dme_fom(double dist_nm);
+
+	/*
+		The following function returns a fom in nm for a VOR using a formula
+		from RTCA DO-236C appendix C-2.The only argument is the total distance to 
+		the station.
+	*/
+
+	inline double get_vor_fom(double dist_nm);
+
+	/*
+		The following function returns a fom in nm for a VOR DME station.
+		It accepts the total distance to the station as its only argument.
+	*/
+
+	inline double get_vor_dme_fom(double dist_nm);
+
+
 	struct navaid_t
 	{
 		std::string id;
