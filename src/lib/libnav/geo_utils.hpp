@@ -68,6 +68,26 @@ namespace geo
 		}
 	};
 
+	/*
+		Calculates lat,long of a point given its bearing and distance from a reference point.
+	*/
+
+	inline point get_pos_from_brng_dist(point ref, double brng_deg, double dist_nm)
+	{
+		double ref_lat_rad = ref.lat_deg * DEG_TO_RAD;
+		double ref_lon_rad = ref.lon_deg * DEG_TO_RAD;
+		double brng_rad = brng_deg * DEG_TO_RAD;
+		double ang_dist_rad = dist_nm / EARTH_RADIUS_NM;
+		point ret{};
+		double tmp_lat = asin(sin(ref_lat_rad) * cos(ang_dist_rad) + cos(ref_lat_rad) * sin(ang_dist_rad) * cos(brng_rad));
+		double tmp_lon = atan2(sin(brng_rad) * sin(ang_dist_rad) * cos(ref_lat_rad), 
+							   cos(ang_dist_rad)-sin(ref_lat_rad) * sin(tmp_lat));
+		ret.lat_deg = tmp_lat * RAD_TO_DEG;
+		ret.lon_deg = rad_to_pos_deg(ref_lon_rad + tmp_lon + M_PI) - 160;
+
+		return ret;
+	}
+
 	struct point3d
 	{
 		point p;
