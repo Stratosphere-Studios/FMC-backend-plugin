@@ -22,23 +22,26 @@ namespace StratosphereAvionics
 
 		tuned_navaid = {};
 		last_tune_time_sec = 0;
+		conn_retry = false;
 	}
 
-	void vhf_radio_t::tune(radnav_util::navaid_t new_navaid)
+	void vhf_radio_t::tune(radnav_util::navaid_t new_navaid, double c_time)
 	{
 		libnav::navaid_entry* navaid_data = new_navaid.data.navaid;
 		if (navaid_data) // Make sure the pointer to navaid data isn't null.
 		{
 			tuned_navaid = new_navaid;
 			xp_databus->set_datai(dr_list.freq, int(navaid_data->freq), dr_list.freq_idx);
+			last_tune_time_sec = c_time;
+			conn_retry = false;
 		}
 	}
 
-	bool vhf_radio_t::is_sig_recv()
+	bool vhf_radio_t::is_sig_recv(int expected_type)
 	{
 		bool vor_recv = false;
 		bool dme_recv = false;
-		switch (tuned_navaid.data.type)
+		switch (expected_type)
 		{
 		case NAV_VOR:
 			return xp_databus->get_data_s(dr_list.nav_id) == tuned_navaid.id;
@@ -227,23 +230,69 @@ namespace StratosphereAvionics
 		return ac_pos;
 	}
 
+	/*
+		The following member function blacklists a tuned navaid if connection is interrupted.
+		Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
+		The calculated position, as well as its standard deviation, get output using certain datarefs.
+	*/
+
+	void NavaidTuner::update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid)
+	{
+		if (vor_dme_radios[radio_idx].is_sig_recv(NAV_VOR_DME))
+		{
+			// Calculate FOM and position
+		}
+		else
+		{
+			if (vor_dme_radios[radio_idx].conn_retry)
+			{
+				black_list->add_to_black_list(navaid, c_time + NAVAID_BLACK_LIST_DUR_SEC);
+				vor_dme_radios[radio_idx].conn_retry = false;
+			}
+			else
+			{
+				vor_dme_radios[radio_idx].conn_retry = true;
+				vor_dme_radios[radio_idx].last_tune_time_sec = c_time + NAVAID_RETRY_DELAY_SEC;
+			}
+		}
+	}
+
 	void NavaidTuner::set_vor_dme_radios()
 	{
 		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
 		{
 			int mode = vor_dme_radio_modes[i];
+			double c_time_sec = main_timer->get_curr_time();
 
-			if (mode == NAV_VHF_AUTO)
+			if (c_time_sec >= vor_dme_radios[i].last_tune_time_sec + RADIO_TUNE_DELAY_SEC)
 			{
-				int check_val = memcmp(&vor_dme_radios[i].tuned_navaid, &vor_dme_cand, sizeof(radnav_util::navaid_t));
-				if (check_val) // Proceed to compare qualities if the tuned navaid doesn't match the current navaid.
+				libnav::waypoint tmp = { vor_dme_radios[i].tuned_navaid.id, vor_dme_radios[i].tuned_navaid.data };
+				bool is_b_listed = black_list->is_black_listed(&tmp, c_time_sec);
+
+				if (mode == NAV_VHF_AUTO)
 				{
-					geo::point3d tmp_ac_pos = get_ac_pos();
-					double curr_qual = vor_dme_radios[i].get_tuned_qual(tmp_ac_pos);
-					if (vor_dme_cand.qual - curr_qual > NAVAID_MAX_QUAL_DIFF)
+					int check_val = memcmp(&vor_dme_radios[i].tuned_navaid, &vor_dme_cand, sizeof(radnav_util::navaid_t));
+					if (check_val) // Proceed to compare qualities if the tuned navaid doesn't match the current navaid.
 					{
-						vor_dme_radios[i].tune(vor_dme_cand);
+						if (is_b_listed)
+						{
+							vor_dme_radios[i].tune(vor_dme_cand, c_time_sec);
+						}
+						else
+						{
+							geo::point3d tmp_ac_pos = get_ac_pos();
+							double curr_qual = vor_dme_radios[i].get_tuned_qual(tmp_ac_pos);
+							if (vor_dme_cand.qual - curr_qual > NAVAID_MAX_QUAL_DIFF)
+							{
+								vor_dme_radios[i].tune(vor_dme_cand, c_time_sec);
+							}
+						}
 					}
+				}
+
+				if (!is_b_listed)
+				{
+					update_vor_dme_conn(i, c_time_sec, &tmp);
 				}
 			}
 		}

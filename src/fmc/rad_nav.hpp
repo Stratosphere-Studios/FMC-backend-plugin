@@ -27,6 +27,10 @@ namespace StratosphereAvionics
 	constexpr int N_DME_DME_RADIOS = 2; // Number of radios auto-tuned for DME/DME position estimation
 	constexpr int N_VHF_NAV_RADIOS = N_VOR_DME_RADIOS + N_DME_DME_RADIOS;
 	constexpr std::memory_order UPDATE_FLG_ORDR = std::memory_order::memory_order_relaxed;
+	constexpr double RADIO_TUNE_DELAY_SEC = 2;
+	constexpr double NAVAID_RETRY_DELAY_SEC = 10;
+	constexpr double NAVAID_BLACK_LIST_DUR_SEC = 60;
+
 
 	enum nav_vhf_radio_modes
 	{
@@ -51,12 +55,14 @@ namespace StratosphereAvionics
 
 		double last_tune_time_sec;
 
+		bool conn_retry;
+
 
 		vhf_radio_t(std::shared_ptr<XPDataBus::DataBus> databus, radio_drs_t drs);
 
-		void tune(radnav_util::navaid_t new_navaid);
+		void tune(radnav_util::navaid_t new_navaid, double c_time);
 
-		bool is_sig_recv();
+		bool is_sig_recv(int expected_type);
 
 		/*
 			The following function returns quality of a tuned navaid.
@@ -69,6 +75,11 @@ namespace StratosphereAvionics
 	struct navaid_tuner_in_drs
 	{
 		radio_drs_t sim_radio_drs[N_VHF_NAV_RADIOS];
+	};
+
+	struct navaid_tuner_out_drs
+	{
+		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom;
 	};
 
 	struct navaid_selector_out_drs
@@ -129,6 +140,14 @@ namespace StratosphereAvionics
 		void set_ac_pos(geo::point3d pos);
 
 		geo::point3d get_ac_pos();
+
+		/*
+			The following member function blacklists a tuned navaid if connection is interrupted.
+			Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
+			The calculated position, as well as its standard deviation, get output using certain datarefs.
+		*/
+
+		void update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid);
 
 		void set_vor_dme_radios();
 
