@@ -264,6 +264,18 @@ namespace XPDataBus
 			out->val_type = xplmType_Float;
 			return XPLMGetDatavf(ref.ref, &out->float_val, out->offset, 1);
 		}
+		else if (xplmType_Data & ref.dr_type)
+		{
+			out->val_type = xplmType_Data;
+			char buf[CHAR_BUF_SIZE+1] = {0};
+			dr_set = XPLMGetDatab(ref.ref, &buf, out->offset, CHAR_BUF_SIZE);
+			int n_val_written = dr_set - out->offset;
+			if (n_val_written <= CHAR_BUF_SIZE && n_val_written >= 0)
+			{
+				buf[n_val_written] = 0;
+			}
+			out->str = buf;
+		}
 
 		if (xplmType_Int & ref.dr_type)
 		{

@@ -565,7 +565,7 @@ namespace DRUtil
 						{
 							out_ptr[i] = ptr->str[i + in_offset];
 						}
-						return r;
+						return str_length;
 					},
 					[](void* ref, void* in_values, int in_offset, int in_max) {
 						//This is janky as well
