@@ -4,7 +4,7 @@
 
 enum FMS_constants
 {
-	N_MAX_DATABUS_QUEUE_PROC = 1024,
+	N_MAX_DATABUS_QUEUE_PROC = 64,
 	N_CUSTOM_STR_DR_LENGTH = 2048,
 	REF_NAV_ICAO_BUF_LENGTH = 5,
 	FMC_SCREEN_LINE_LENGTH = 24,
@@ -62,6 +62,10 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom", DR_READONLY, false, nullptr}, nullptr},
+
 	// FMC L data refs:
 
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
@@ -208,6 +212,10 @@ StratosphereAvionics::avionics_out_drs av_out = {
 											{"Strato/777/FMC/REF_NAV/vor_1_out",
 											 "Strato/777/FMC/REF_NAV/vor_2_out"},
 
+											{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat",
+											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon",
+											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom"},
+
 											{{"Strato/777/FMC/RAD_NAV/VOR_DME/c1", 
 											  "Strato/777/FMC/RAD_NAV/VOR_DME/c2",
 											  "Strato/777/FMC/RAD_NAV/VOR_DME/c3",
@@ -217,6 +225,7 @@ StratosphereAvionics::avionics_out_drs av_out = {
 											  "Strato/777/FMC/RAD_NAV/DME_DME/c2",
 											  "Strato/777/FMC/RAD_NAV/DME_DME/c3",
 											  "Strato/777/FMC/RAD_NAV/DME_DME/c4"}}
+											
 };
 
 StratosphereAvionics::fmc_in_drs fmc_l_in = {
