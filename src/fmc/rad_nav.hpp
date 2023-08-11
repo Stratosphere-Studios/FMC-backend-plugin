@@ -78,7 +78,7 @@ namespace StratosphereAvionics
 			It gets aircraft position as input.
 		*/
 
-		double get_tuned_qual(geo::point3d ac_pos);
+		double get_tuned_qual(geo::point3d ac_pos, double dist);
 	};
 
 	struct navaid_tuner_in_drs
@@ -88,7 +88,7 @@ namespace StratosphereAvionics
 
 	struct navaid_tuner_out_drs
 	{
-		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom;
+		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom, curr_dme_pair_debug;
 	};
 
 	struct navaid_selector_out_drs
@@ -151,15 +151,9 @@ namespace StratosphereAvionics
 
 		geo::point3d get_ac_pos();
 
-		/*
-			The following member function blacklists a tuned navaid if connection is interrupted.
-			Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
-			The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
-		*/
-
-		void update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid);
-
 		void set_vor_dme_radios();
+
+		void set_dme_dme_radios();
 
 		void main_loop();
 
@@ -188,6 +182,19 @@ namespace StratosphereAvionics
 		libtime::Timer* main_timer;
 
 		double vor_dme_pos_update_last;
+
+
+		/*
+			The following member function blacklists a tuned navaid if connection is interrupted.
+			Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
+			The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
+		*/
+
+		void update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid);
+
+		double get_curr_dme_dme_qual();
+
+		void tune_dme_dme_cand(radnav_util::navaid_pair_t cand_pair, double c_time);
 	};
 
 
