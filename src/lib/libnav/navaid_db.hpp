@@ -150,6 +150,13 @@ namespace radnav_util
 
 	double get_vor_dme_fom(double dist_nm);
 
+	/*
+		This function calculates a quality value for a pair of navaids given
+		the encounter geometry angle and their respective qualities.
+	*/
+
+	double get_dme_dme_qual(double phi_deg, double q1, double q2);
+
 
 	struct navaid_t
 	{

@@ -356,6 +356,27 @@ namespace radnav_util
 	}
 
 	/*
+		This function calculates a quality value for a pair of navaids given
+		the encounter geometry angle and their respective qualities.
+	*/
+
+	double get_dme_dme_qual(double phi_deg, double q1, double q2)
+	{
+		if (phi_deg > DME_DME_PHI_MIN_DEG && phi_deg < DME_DME_PHI_MAX_DEG)
+		{
+			double min_qual = q1;
+			if (q2 < min_qual)
+			{
+				min_qual = q2;
+			}
+
+			double qual = (min_qual + 1 - abs(90 - phi_deg) / 90) / 2;
+			return qual;
+		}
+		return -1;
+	}
+
+	/*
 		This function calculates the quality ratio for a navaid.
 		Navaids are sorted by this ratio to determine the best 
 		suitable candidate(s) for radio navigation.
@@ -387,7 +408,7 @@ namespace radnav_util
 		}
 		qual = -1;
 	}
-
+	
 	/*
 		This function calculates a quality value for a pair of navaids.
 		This is useful when picking candidates for DME/DME position calculation.
@@ -403,17 +424,8 @@ namespace radnav_util
 			if (phi > 180)
 				phi = 360 - phi;
 
-			if (phi > DME_DME_PHI_MIN_DEG && phi < DME_DME_PHI_MAX_DEG)
-			{
-				double min_qual = n1->qual;
-				if (n2->qual < min_qual)
-				{
-					min_qual = n2->qual;
-				}
-
-				qual = (min_qual + 1 - abs(90 - phi) / 90) / 2;
-				return;
-			}
+			qual = get_dme_dme_qual(phi, n1->qual, n2->qual);
+			return;
 		}
 		qual = -1;
 	}
