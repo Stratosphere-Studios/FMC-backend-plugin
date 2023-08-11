@@ -56,6 +56,27 @@ namespace StratosphereAvionics
 		}
 	}
 
+	/*
+		The following function returns the ground distance to the tuned nav aid.
+		It uses the distance output from a DME and accounts for slant angle using
+		the current altitude of the aircraft.
+	*/
+
+	double vhf_radio_t::get_gnd_dist(double dist, double alt_ft)
+	{
+		if (dist)
+		{
+			double v_dist_nm = abs(alt_ft - tuned_navaid.data.navaid->elevation) * FT_TO_NM;
+			return sqrt(dist * dist - v_dist_nm * v_dist_nm);
+		}
+		return 0;
+	}
+
+	/*
+		The following function returns quality of a tuned navaid.
+		It gets aircraft position as input.
+	*/
+
 	double vhf_radio_t::get_tuned_qual(geo::point3d ac_pos)
 	{
 		libnav::navaid_entry* navaid_data = tuned_navaid.data.navaid;
@@ -151,12 +172,15 @@ namespace StratosphereAvionics
 
 	// Public functions:
 
-	NavaidTuner::NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, int freq)
+	NavaidTuner::NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, 
+							 navaid_tuner_out_drs out, int freq)
 	{
 		ac_pos = {};
+		vor_dme_pos_update_last = 0;
 
 		xp_databus = databus;
 		in_drs = in;
+		out_drs = out;
 		n_update_freq_hz = freq;
 
 		dme_dme_cand = new radnav_util::navaid_t[N_DME_DME_CAND];
@@ -233,7 +257,7 @@ namespace StratosphereAvionics
 	/*
 		The following member function blacklists a tuned navaid if connection is interrupted.
 		Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
-		The calculated position, as well as its standard deviation, get output using certain datarefs.
+		The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
 	*/
 
 	void NavaidTuner::update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid)
@@ -241,9 +265,29 @@ namespace StratosphereAvionics
 		if (vor_dme_radios[radio_idx].is_sig_recv(NAV_VOR_DME))
 		{
 			// Calculate FOM and position
+
+			if (c_time >= vor_dme_pos_update_last + VOR_DME_POS_UPDATE_DELAY_SEC)
+			{
+				geo::point3d ppos = get_ac_pos();
+				double brng = xp_databus->get_datad(vor_dme_radios[radio_idx].dr_list.vor_deg);
+				double total_dist = xp_databus->get_datad(vor_dme_radios[radio_idx].dr_list.dme_nm);
+				double dist = vor_dme_radios[radio_idx].get_gnd_dist(total_dist, ppos.alt_ft);
+
+				geo::point pos = geo::get_pos_from_brng_dist(vor_dme_radios[radio_idx].tuned_navaid.data.pos, brng, dist);
+				double pos_fom_m = radnav_util::get_vor_dme_fom(total_dist) * NM_TO_M;
+
+				xp_databus->set_datad(out_drs.vor_dme_pos_lat, pos.lat_deg);
+				xp_databus->set_datad(out_drs.vor_dme_pos_lon, pos.lon_deg);
+				xp_databus->set_datad(out_drs.vor_dme_pos_fom, pos_fom_m);
+
+				vor_dme_pos_update_last = c_time;
+			}
 		}
 		else
 		{
+			xp_databus->set_datad(out_drs.vor_dme_pos_lat, 0);
+			xp_databus->set_datad(out_drs.vor_dme_pos_lon, 0);
+			xp_databus->set_datad(out_drs.vor_dme_pos_fom, 0);
 			if (vor_dme_radios[radio_idx].conn_retry)
 			{
 				black_list->add_to_black_list(navaid, c_time + NAVAID_BLACK_LIST_DUR_SEC);

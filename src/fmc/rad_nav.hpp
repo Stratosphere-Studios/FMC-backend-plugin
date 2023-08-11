@@ -30,6 +30,7 @@ namespace StratosphereAvionics
 	constexpr double RADIO_TUNE_DELAY_SEC = 2;
 	constexpr double NAVAID_RETRY_DELAY_SEC = 10;
 	constexpr double NAVAID_BLACK_LIST_DUR_SEC = 60;
+	constexpr double VOR_DME_POS_UPDATE_DELAY_SEC = 2;
 
 
 	enum nav_vhf_radio_modes
@@ -63,6 +64,14 @@ namespace StratosphereAvionics
 		void tune(radnav_util::navaid_t new_navaid, double c_time);
 
 		bool is_sig_recv(int expected_type);
+
+		/*
+			The following function returns the ground distance to the tuned nav aid.
+			It uses the distance output from a DME and accounts for slant angle using 
+			the current altitude of the aircraft.
+		*/
+
+		double get_gnd_dist(double dist, double alt_ft);
 
 		/*
 			The following function returns quality of a tuned navaid.
@@ -125,7 +134,8 @@ namespace StratosphereAvionics
 		radnav_util::navaid_pair_t dme_dme_cand_pair;
 
 
-		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, int ut);
+		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, 
+					navaid_tuner_out_drs out, int ut);
 
 		bool is_black_listed(libnav::waypoint* wpt);
 
@@ -144,7 +154,7 @@ namespace StratosphereAvionics
 		/*
 			The following member function blacklists a tuned navaid if connection is interrupted.
 			Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
-			The calculated position, as well as its standard deviation, get output using certain datarefs.
+			The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
 		*/
 
 		void update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid);
@@ -160,6 +170,7 @@ namespace StratosphereAvionics
 		int n_update_freq_hz;
 
 		navaid_tuner_in_drs in_drs;
+		navaid_tuner_out_drs out_drs;
 
 		std::thread radio_thread;
 		std::mutex vor_dme_cand_mutex;
@@ -175,6 +186,8 @@ namespace StratosphereAvionics
 		std::vector<vhf_radio_t> dme_dme_radios;
 
 		libtime::Timer* main_timer;
+
+		double vor_dme_pos_update_last;
 	};
 
 
