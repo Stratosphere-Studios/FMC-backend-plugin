@@ -109,6 +109,7 @@ std::vector<DRUtil::dref_s> str_datarefs = {
 	{{"Strato/777/FMC/RAD_NAV/DME_DME/c2", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
 	{{"Strato/777/FMC/RAD_NAV/DME_DME/c3", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
 	{{"Strato/777/FMC/RAD_NAV/DME_DME/c4", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/tuned_pair", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
 
 	// FMC L data refs:
 
@@ -214,7 +215,8 @@ StratosphereAvionics::avionics_out_drs av_out = {
 
 											{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat",
 											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon",
-											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom"},
+											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom",
+											 "Strato/777/FMC/RAD_NAV/DME_DME/tuned_pair"},
 
 											{{"Strato/777/FMC/RAD_NAV/VOR_DME/c1", 
 											  "Strato/777/FMC/RAD_NAV/VOR_DME/c2",
