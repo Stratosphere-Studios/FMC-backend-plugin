@@ -57,7 +57,7 @@ namespace StratosphereAvionics
 
 		dr_cache = new XPDataBus::DataRefCache();
 
-		navaid_tuner = new NavaidTuner(databus, in_drs.nav_tuner, rad_nav_cand_update_time_sec);
+		navaid_tuner = new NavaidTuner(databus, in_drs.nav_tuner, out_drs.nav_tuner, rad_nav_cand_update_time_sec);
 		navaid_selector = new NavaidSelector(databus, navaid_tuner, out_drs.nav_selector, cache_tile_size,
 										     min_navaid_dist_nm, rad_nav_cand_update_time_sec);
 	}

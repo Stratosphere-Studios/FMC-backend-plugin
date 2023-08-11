@@ -54,7 +54,8 @@ namespace StratosphereAvionics
 
 		std::vector<std::string> excl_navaids;
 		std::vector<std::string> excl_vors;
-
+		
+		navaid_tuner_out_drs nav_tuner;
 		navaid_selector_out_drs nav_selector;
 	};
 
