@@ -133,7 +133,7 @@ namespace radnav_util
 		the station.
 	*/
 
-	inline double get_dme_fom(double dist_nm);
+	double get_dme_fom(double dist_nm);
 
 	/*
 		The following function returns a fom in nm for a VOR using a formula
@@ -141,14 +141,14 @@ namespace radnav_util
 		the station.
 	*/
 
-	inline double get_vor_fom(double dist_nm);
+	double get_vor_fom(double dist_nm);
 
 	/*
 		The following function returns a fom in nm for a VOR DME station.
 		It accepts the total distance to the station as its only argument.
 	*/
 
-	inline double get_vor_dme_fom(double dist_nm);
+	double get_vor_dme_fom(double dist_nm);
 
 
 	struct navaid_t
