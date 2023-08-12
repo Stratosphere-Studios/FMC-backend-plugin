@@ -169,8 +169,8 @@ StratosphereAvionics::avionics_in_drs av_in = {
 														"sim/cockpit2/radios/actuators/nav_frequency_hz",
 														"sim/cockpit2/radios/indicators/nav1_nav_id",
 														"sim/cockpit2/radios/indicators/nav1_dme_id",
-														"sim/cockpit2/radios/indicators/nav1_bearing_deg_mag",
-														"sim/cockpit2/radios/indicators/nav1_dme_distance_nm",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
 														0
 													},
 
@@ -178,8 +178,8 @@ StratosphereAvionics::avionics_in_drs av_in = {
 														"sim/cockpit2/radios/actuators/nav_frequency_hz",
 														"sim/cockpit2/radios/indicators/nav2_nav_id",
 														"sim/cockpit2/radios/indicators/nav2_dme_id",
-														"sim/cockpit2/radios/indicators/nav2_bearing_deg_mag",
-														"sim/cockpit2/radios/indicators/nav2_dme_distance_nm",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
 														1
 													},
 
@@ -187,8 +187,8 @@ StratosphereAvionics::avionics_in_drs av_in = {
 														"sim/cockpit2/radios/actuators/nav_frequency_hz",
 														"sim/cockpit2/radios/indicators/nav3_nav_id",
 														"sim/cockpit2/radios/indicators/nav3_dme_id",
-														"sim/cockpit2/radios/indicators/nav3_bearing_deg_mag",
-														"sim/cockpit2/radios/indicators/nav3_dme_distance_nm",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
 														2
 													},
 
@@ -196,8 +196,8 @@ StratosphereAvionics::avionics_in_drs av_in = {
 														"sim/cockpit2/radios/actuators/nav_frequency_hz",
 														"sim/cockpit2/radios/indicators/nav4_nav_id",
 														"sim/cockpit2/radios/indicators/nav4_dme_id",
-														"sim/cockpit2/radios/indicators/nav4_bearing_deg_mag",
-														"sim/cockpit2/radios/indicators/nav4_dme_distance_nm",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
 														3
 													}
 												}
