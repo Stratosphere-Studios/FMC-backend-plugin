@@ -226,8 +226,7 @@ namespace StratosphereAvionics
 
 		for (int i = 0; i < entries.size(); i++)
 		{
-			libnav::waypoint tmp = { id, entries.at(i) };
-			navaid_tuner->black_list->add_to_black_list(&tmp);
+			navaid_tuner->black_list->add_to_black_list(&id, &entries.at(i));
 		}
 	}
 
@@ -243,7 +242,7 @@ namespace StratosphereAvionics
 		for (int i = 0; i < entries.size(); i++)
 		{
 			libnav::waypoint tmp = { id, entries.at(i) };
-			navaid_tuner->black_list->remove_from_black_list(&tmp);
+			navaid_tuner->black_list->remove_from_black_list(&id, &entries.at(i));
 		}
 	}
 

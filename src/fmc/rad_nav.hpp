@@ -43,7 +43,7 @@ namespace StratosphereAvionics
 	struct radio_drs_t
 	{
 		std::string freq, nav_id, dme_id, vor_deg, dme_nm;
-		int freq_idx;
+		int dr_idx; // This index is used to obtain navaid identifiers, bearings and distances
 	};
 
 	struct vhf_radio_t
@@ -105,18 +105,18 @@ namespace StratosphereAvionics
 	public:
 		BlackList();
 
-		void add_to_black_list(libnav::waypoint* wpt, double bl_dur = NAVAID_PROHIBIT_PERMANENT);
+		void add_to_black_list(std::string* id, libnav::waypoint_entry* data, double bl_dur = NAVAID_PROHIBIT_PERMANENT);
 
-		void remove_from_black_list(libnav::waypoint* wpt);
+		void remove_from_black_list(std::string* id, libnav::waypoint_entry* data);
 
-		bool is_black_listed(libnav::waypoint* wpt, double c_time_sec);
+		bool is_black_listed(std::string* id, libnav::waypoint_entry* data, double c_time_sec);
 
 	private:
 		std::unordered_map<std::string, double> bl;
 		std::mutex bl_mutex;
 
 
-		static std::string get_black_list_key(libnav::waypoint* wpt);
+		static std::string get_black_list_key(std::string* id, libnav::waypoint_entry* data);
 	};
 
 
@@ -137,7 +137,7 @@ namespace StratosphereAvionics
 		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, 
 					navaid_tuner_out_drs out, int ut);
 
-		bool is_black_listed(libnav::waypoint* wpt);
+		bool is_black_listed(std::string* id, libnav::waypoint_entry* data);
 
 		void set_vor_dme_cand(radnav_util::navaid_t cand);
 
@@ -185,16 +185,30 @@ namespace StratosphereAvionics
 
 
 		/*
+			Description:
+			The following member function first tries to delay the radio tuning
+			in an attempt to restore connection. If connection couldn't be restored
+			after a small period of time, the navaid gets black listed for a longer period.
+			Param:
+			ptr - pointer to radio
+			c_time - current time. Usually obtained from main_timer.
+		*/
+
+		void black_list_tuned_navaid(vhf_radio_t* ptr, double c_time);
+
+		/*
 			The following member function blacklists a tuned navaid if connection is interrupted.
 			Otherwise, it calculates a VOR DME position based on bearing and distance to a navaid.
 			The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
 		*/
 
-		void update_vor_dme_conn(int radio_idx, double c_time, libnav::waypoint* navaid);
+		void update_vor_dme_conn(int radio_idx, double c_time);
 
 		double get_curr_dme_dme_qual();
 
 		void tune_dme_dme_cand(radnav_util::navaid_pair_t cand_pair, double c_time);
+
+		void update_dme_dme_conn(double c_time);
 	};
 
 
