@@ -6,11 +6,13 @@
 
 	Author: discord/bruh4096#4512
 
-	This file contains definitions of member functions used within the REF NAV DATA page.
+	This file contains declarations of member functions for NavaidTuner and BlackList classes.
 */
 
-#include "nav_db.hpp"
-#include "databus.hpp"
+#pragma once
+
+
+#include "radio.hpp"
 #include "timer.hpp"
 #include <cstring>
 
@@ -22,7 +24,7 @@ namespace StratosphereAvionics
 	constexpr double NAVAID_PROHIBIT_PERMANENT = -1;
 	constexpr double NAVAID_MAX_QUAL_DIFF = 0.2; // If the difference in quality between candidate and current station is greater than this, the candidate(s) gets tuned.
 	constexpr int ILS_NAVAID_ID_LENGTH = 4;
-	
+
 	constexpr int N_VOR_DME_RADIOS = 2; // Number of radios auto-tuned for VOR/DME position estimation
 	constexpr int N_DME_DME_RADIOS = 2; // Number of radios auto-tuned for DME/DME position estimation
 	constexpr int N_VHF_NAV_RADIOS = N_VOR_DME_RADIOS + N_DME_DME_RADIOS;
@@ -33,54 +35,6 @@ namespace StratosphereAvionics
 	constexpr double VOR_DME_POS_UPDATE_DELAY_SEC = 2;
 
 
-	enum nav_vhf_radio_modes
-	{
-		NAV_VHF_AUTO = 0,
-		NAV_VHF_MAN = 1
-	};
-
-
-	struct radio_drs_t
-	{
-		std::string freq, nav_id, dme_id, vor_deg, dme_nm;
-		int dr_idx; // This index is used to obtain navaid identifiers, bearings and distances
-	};
-
-	struct vhf_radio_t
-	{
-		std::shared_ptr<XPDataBus::DataBus> xp_databus;
-
-		radio_drs_t dr_list;
-
-		radnav_util::navaid_t tuned_navaid;
-
-		double last_tune_time_sec;
-
-		bool conn_retry;
-
-
-		vhf_radio_t(std::shared_ptr<XPDataBus::DataBus> databus, radio_drs_t drs);
-
-		void tune(radnav_util::navaid_t new_navaid, double c_time);
-
-		bool is_sig_recv(int expected_type);
-
-		/*
-			The following function returns the ground distance to the tuned nav aid.
-			It uses the distance output from a DME and accounts for slant angle using 
-			the current altitude of the aircraft.
-		*/
-
-		double get_gnd_dist(double dist, double alt_ft);
-
-		/*
-			The following function returns quality of a tuned navaid.
-			It gets aircraft position as input.
-		*/
-
-		double get_tuned_qual(geo::point3d ac_pos, double dist);
-	};
-
 	struct navaid_tuner_in_drs
 	{
 		radio_drs_t sim_radio_drs[N_VHF_NAV_RADIOS];
@@ -89,14 +43,6 @@ namespace StratosphereAvionics
 	struct navaid_tuner_out_drs
 	{
 		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom, curr_dme_pair_debug;
-	};
-
-	struct navaid_selector_out_drs
-	{
-		// These are DEBUG-ONLY!
-		std::vector<std::string> vor_dme_cand_data;
-
-		std::vector<std::string> dme_dme_cand_data;
 	};
 
 
@@ -134,8 +80,8 @@ namespace StratosphereAvionics
 		radnav_util::navaid_pair_t dme_dme_cand_pair;
 
 
-		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in, 
-					navaid_tuner_out_drs out, int ut);
+		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in,
+			navaid_tuner_out_drs out, int ut);
 
 		bool is_black_listed(std::string* id, libnav::waypoint_entry* data);
 
@@ -186,7 +132,7 @@ namespace StratosphereAvionics
 
 		/*
 			Description:
-			The following member function first tries to delay the radio tuning
+			The following member function first ttries to delay the radio tuning
 			in an attempt to restore connection. If connection couldn't be restored
 			after a small period of time, the navaid gets black listed for a longer period.
 			Param:
@@ -210,53 +156,4 @@ namespace StratosphereAvionics
 
 		void update_dme_dme_conn(double c_time);
 	};
-
-
-	class NavaidSelector
-	{
-	public:
-		std::shared_ptr<XPDataBus::DataBus> xp_databus;
-
-		NavaidTuner* navaid_tuner;
-
-
-		NavaidSelector(std::shared_ptr<XPDataBus::DataBus> databus, NavaidTuner* tuner, navaid_selector_out_drs out,
-					   double tile_size, double navaid_thresh_nm, int dur_sec);
-
-		void update_dme_dme_cand(geo::point ac_pos, std::vector<radnav_util::navaid_t>* navaids);
-
-		/*
-			The following member function updates VOR DME and DME DME candidates.
-		*/
-
-		void update_rad_nav_cand(geo::point3d ac_pos);
-
-		void update(libnav::wpt_db_t* ptr, geo::point3d ac_pos, double c_time_sec);
-
-		~NavaidSelector();
-
-	private:
-		geo::point3d ac_pos_last;
-
-		libnav::wpt_db_t* wpt_db;
-
-		libnav::wpt_tile_t navaid_cache;
-
-		radnav_util::navaid_t vor_dme_cand;
-
-		radnav_util::navaid_pair_t dme_dme_cand_pair;
-
-		std::mutex vor_dme_cand_mutex;
-		std::mutex dme_dme_cand_mutex;
-
-		int cand_update_dur_sec;
-
-		double cache_tile_size, min_navaid_dist_nm, 
-			   cand_update_last_sec;
-
-		navaid_selector_out_drs out_drs;
-
-		
-		void update_navaid_cache(geo::point ac_pos);
-	};
-};
+}

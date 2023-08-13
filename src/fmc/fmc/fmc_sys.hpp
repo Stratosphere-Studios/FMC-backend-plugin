@@ -12,7 +12,7 @@
 
 #include "dr_cache.hpp"
 #include "databus.hpp"
-#include "rad_nav.hpp"
+#include "navaid_selector.hpp"
 #include "nav_db.hpp"
 #include "timer.hpp"
 #include <cstring>
