@@ -155,6 +155,21 @@ namespace radnav_util
 		the encounter geometry angle and their respective qualities.
 	*/
 
+	/*
+		Function: get_dme_dme_fom
+		Description:
+		This function calculates a FOM value for a pair of navaids given
+		the encounter geometry angle and their respective distances.
+		Param:
+		dist1_nm: quality value of the first DME
+		dist2_nm: quality value of the second DME
+		phi_rad: encounter geometry angle between 2 DMEs
+		Return:
+		Returns a FOM value.
+	*/
+
+	double get_dme_dme_fom(double dist1_nm, double dist2_nm, double phi_rad);
+
 	double get_dme_dme_qual(double phi_deg, double q1, double q2);
 
 
