@@ -98,6 +98,7 @@ namespace StratosphereAvionics
 	{
 		ac_pos = {};
 		vor_dme_pos_update_last = 0;
+		dme_dme_pos_update_last = 0;
 
 		xp_databus = databus;
 		in_drs = in;
@@ -249,7 +250,9 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				double curr_qual = get_curr_dme_dme_qual();
+				double dist_1 = double(xp_databus->get_dataf(dme_dme_radios[0].dr_list.dme_nm, dme_dme_radios[0].dr_list.dr_idx));
+				double dist_2 = double(xp_databus->get_dataf(dme_dme_radios[1].dr_list.dme_nm, dme_dme_radios[1].dr_list.dr_idx));
+				double curr_qual = get_curr_dme_dme_qual(dist_1, dist_2);
 				std::string dme_dme_debug = dme_dme_radios[0].tuned_navaid.id + " " +
 					dme_dme_radios[1].tuned_navaid.id + " " + std::to_string(curr_qual);
 				xp_databus->set_data_s(out_drs.curr_dme_pair_debug, dme_dme_debug);
@@ -259,7 +262,7 @@ namespace StratosphereAvionics
 					return;
 				}
 
-				update_dme_dme_conn(c_time_sec);
+				update_dme_dme_conn(dist_1, dist_2, c_time_sec);
 			}
 		}
 	}
@@ -293,6 +296,7 @@ namespace StratosphereAvionics
 	// Private functions:
 
 	/*
+		Function: black_list_tuned_navaid
 		Description:
 		The following member function first tries to delay the radio tuning
 		in an attempt to restore connection. If connection couldn't be restored
@@ -300,6 +304,8 @@ namespace StratosphereAvionics
 		Param:
 		ptr - pointer to radio
 		c_time - current time. Usually obtained from main_timer.
+		Return:
+		nothing to see here
 	*/
 
 	void NavaidTuner::black_list_tuned_navaid(vhf_radio_t* ptr, double c_time)
@@ -331,7 +337,7 @@ namespace StratosphereAvionics
 			vor_dme_radios[radio_idx].conn_retry = false;
 			// Calculate FOM and position
 
-			if (c_time >= vor_dme_pos_update_last + VOR_DME_POS_UPDATE_DELAY_SEC)
+			if (c_time >= vor_dme_pos_update_last + RADIO_POS_UPDATE_DELAY_SEC)
 			{
 				int idx = curr_radio->dr_list.dr_idx;
 				geo::point3d ppos = get_ac_pos();
@@ -358,28 +364,74 @@ namespace StratosphereAvionics
 		}
 	}
 
-	double NavaidTuner::get_curr_dme_dme_qual()
+	/*
+		Function: get_curr_dme_dme_phi_rad
+		Description:
+		function that returns angle between 2 currently tuned DMEs.
+		Param:
+		ppos: present aircraft position
+		dist_1: distance to first dme(tuned in dme_dme radio #1)
+		dist_2: distance to second dme(tuned in dme_dme radio #2)
+		Return:
+		returns angle between -pi/2 and pi/2 in radians
+	*/
+
+	double NavaidTuner::get_curr_dme_dme_phi_rad(geo::point3d ppos, double dist_1, double dist_2)
 	{
-		double dist_1 = double(xp_databus->get_dataf(dme_dme_radios[0].dr_list.dme_nm, dme_dme_radios[0].dr_list.dr_idx));
-		double dist_2 = double(xp_databus->get_dataf(dme_dme_radios[1].dr_list.dme_nm, dme_dme_radios[1].dr_list.dr_idx));
 		if (dist_1 * dist_2)
 		{
+			libnav::waypoint_entry* data_1 = &dme_dme_radios[0].tuned_navaid.data;
+			libnav::waypoint_entry* data_2 = &dme_dme_radios[1].tuned_navaid.data;
+
 			// Get encounter geometry angle for currently tuned DMEs.
-			geo::point3d ppos = get_ac_pos();
 			double gnd_dist_1 = dme_dme_radios[0].get_gnd_dist(dist_1, ppos.alt_ft);
 			double gnd_dist_2 = dme_dme_radios[1].get_gnd_dist(dist_2, ppos.alt_ft);
-			double gnd_dist_3 = dme_dme_radios[0].tuned_navaid.data.pos.get_great_circle_distance_nm(
-				dme_dme_radios[1].tuned_navaid.data.pos);
-			// Just applying the good old law of cosines. Nothing to see here :)
-			double cos_phi = (std::pow(gnd_dist_1, 2) + std::pow(gnd_dist_2, 2) - std::pow(gnd_dist_3, 2)) /
-				(gnd_dist_1 * gnd_dist_2);
-			double phi = acos(cos_phi) * RAD_TO_DEG;
-			double qual_1 = dme_dme_radios[0].get_tuned_qual(ppos, dist_1);
-			double qual_2 = dme_dme_radios[1].get_tuned_qual(ppos, dist_2);
-			return radnav_util::get_dme_dme_qual(phi, qual_1, qual_2);
+			double gnd_dist_3 = data_1->pos.get_line_dist_nm(data_2->pos, data_1->navaid->elevation, data_2->navaid->elevation);
+			// Verify that triangle exists
+			if (gnd_dist_1 + gnd_dist_2 > gnd_dist_3 && gnd_dist_1 + gnd_dist_3 > gnd_dist_2 && gnd_dist_2 + gnd_dist_3 > gnd_dist_1)
+			{
+				// Just applying the good old law of cosines. Nothing to see here :)
+				double cos_phi = (std::pow(gnd_dist_1, 2) + std::pow(gnd_dist_2, 2) - std::pow(gnd_dist_3, 2)) /
+					(gnd_dist_1 * gnd_dist_2);
+				return acos(cos_phi);
+			}
 		}
-		return -1;
+		return 0;
 	}
+
+	/*
+		Function: get_curr_dme_dme_qual
+		Description:
+		function that returns the quality value of the currently tuned pair of DMEs. The
+		quality value is based on dist_1 and dist_2, which are supposed to be the distances
+		returned from DMEs themselves.
+		Param:
+		ppos: present aircraft position
+		dist_1: distance to first dme(tuned in dme_dme radio #1)
+		dist_2: distance to second dme(tuned in dme_dme radio #2)
+		Return:
+		returns a quality value in range [-1, 1]
+	*/
+
+	double NavaidTuner::get_curr_dme_dme_qual(double dist_1, double dist_2)
+	{
+		geo::point3d ppos = get_ac_pos();
+		double phi = get_curr_dme_dme_phi_rad(ppos, dist_1, dist_2) * RAD_TO_DEG;
+		double qual_1 = dme_dme_radios[0].get_tuned_qual(ppos, dist_1);
+		double qual_2 = dme_dme_radios[1].get_tuned_qual(ppos, dist_2);
+		return radnav_util::get_dme_dme_qual(phi, qual_1, qual_2);
+	}
+
+	/*
+		Function: tune_dme_dme_cand
+		Description:
+		function that tunes dme_dme radio #1 and #2 to navaids provided by cand_pair
+		Param:
+		cand_pair: pair of candidates for DME DME position
+		c_time: current time(obtained using main_timer)
+		Return:
+		nothing to see here
+	*/
 
 	void NavaidTuner::tune_dme_dme_cand(radnav_util::navaid_pair_t cand_pair, double c_time)
 	{
@@ -395,7 +447,62 @@ namespace StratosphereAvionics
 		}
 	}
 
-	void NavaidTuner::update_dme_dme_conn(double c_time)
+	/*
+		Function: update_dme_dme_pos
+		Description:
+		function that calculates the DME/DME position and outputs it via debug datarefs(subject to change)
+		Param:
+		dist_1: distance to dme tuned by dme_dme radio #1
+		c_time: distance to dme tuned by dme_dme radio #2
+		Return:
+		nothing to see here
+	*/
+
+	void NavaidTuner::update_dme_dme_pos(double dist_1, double dist_2)
+	{
+		if (dme_dme_radios[0].tuned_navaid.data.navaid && dme_dme_radios[1].tuned_navaid.data.navaid)
+		{
+			libnav::waypoint_entry* data_1 = &dme_dme_radios[0].tuned_navaid.data;
+			libnav::waypoint_entry* data_2 = &dme_dme_radios[1].tuned_navaid.data;
+			double elev_1 = data_1->navaid->elevation;
+			double elev_2 = data_2->navaid->elevation;
+			// Calculate position and FOM
+			geo::point3d ppos = get_ac_pos();
+			geo::point pos[2];
+			int n_pos_calc = 0;
+			if (data_1->pos.lon_deg < data_2->pos.lon_deg)
+			{
+				n_pos_calc = geo::get_dme_dme_pos(data_1->pos, data_2->pos, dist_1, dist_2, elev_1, elev_2, ppos.alt_ft, pos);
+			}
+			else
+			{
+				n_pos_calc = geo::get_dme_dme_pos(data_2->pos, data_1->pos, dist_2, dist_1, elev_1, elev_2, ppos.alt_ft, pos);
+			}
+			if (n_pos_calc)
+			{
+				double d_1 = pos[0].get_great_circle_distance_nm(ppos.p);
+				double d_2 = pos[1].get_great_circle_distance_nm(ppos.p);
+				geo::point* dme_dme_pos;
+				if (d_1 < d_2)
+				{
+					dme_dme_pos = &pos[0];
+				}
+				else
+				{
+					dme_dme_pos = &pos[1];
+				}
+				xp_databus->set_datad(out_drs.dme_dme_pos_lat, pos[0].lat_deg);
+				xp_databus->set_datad(out_drs.dme_dme_pos_lon, pos[0].lon_deg);
+			}
+			else
+			{
+				xp_databus->set_datad(out_drs.dme_dme_pos_lat, 0);
+				xp_databus->set_datad(out_drs.dme_dme_pos_lon, 0);
+			}
+		}
+	}
+
+	void NavaidTuner::update_dme_dme_conn(double dist_1, double dist_2, double c_time)
 	{
 		bool is_sig_recv_1 = dme_dme_radios[0].is_sig_recv(NAV_DME);
 		bool is_sig_recv_2 = dme_dme_radios[1].is_sig_recv(NAV_DME);
@@ -403,7 +510,12 @@ namespace StratosphereAvionics
 		{
 			dme_dme_radios[0].conn_retry = false;
 			dme_dme_radios[1].conn_retry = false;
-			// Calculate position and FOM
+
+			if (c_time >= dme_dme_pos_update_last + RADIO_POS_UPDATE_DELAY_SEC)
+			{
+				update_dme_dme_pos(dist_1, dist_2);
+				dme_dme_pos_update_last = c_time;
+			}
 		}
 		if (!is_sig_recv_1)
 		{

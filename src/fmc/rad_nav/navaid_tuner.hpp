@@ -32,7 +32,7 @@ namespace StratosphereAvionics
 	constexpr double RADIO_TUNE_DELAY_SEC = 2;
 	constexpr double NAVAID_RETRY_DELAY_SEC = 10;
 	constexpr double NAVAID_BLACK_LIST_DUR_SEC = 60;
-	constexpr double VOR_DME_POS_UPDATE_DELAY_SEC = 2;
+	constexpr double RADIO_POS_UPDATE_DELAY_SEC = 2;
 
 
 	struct navaid_tuner_in_drs
@@ -42,7 +42,8 @@ namespace StratosphereAvionics
 
 	struct navaid_tuner_out_drs
 	{
-		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom, curr_dme_pair_debug;
+		std::string vor_dme_pos_lat, vor_dme_pos_lon, vor_dme_pos_fom, 
+			dme_dme_pos_lat, dme_dme_pos_lon, dme_dme_pos_fom, curr_dme_pair_debug;
 	};
 
 
@@ -128,16 +129,20 @@ namespace StratosphereAvionics
 		libtime::Timer* main_timer;
 
 		double vor_dme_pos_update_last;
+		double dme_dme_pos_update_last;
 
 
 		/*
+			Function: black_list_tuned_navaid
 			Description:
-			The following member function first ttries to delay the radio tuning
+			The following member function first tries to delay the radio tuning
 			in an attempt to restore connection. If connection couldn't be restored
 			after a small period of time, the navaid gets black listed for a longer period.
 			Param:
 			ptr - pointer to radio
 			c_time - current time. Usually obtained from main_timer.
+			Return:
+			nothing to see here
 		*/
 
 		void black_list_tuned_navaid(vhf_radio_t* ptr, double c_time);
@@ -150,10 +155,62 @@ namespace StratosphereAvionics
 
 		void update_vor_dme_conn(int radio_idx, double c_time);
 
-		double get_curr_dme_dme_qual();
+		/*
+			Function: get_curr_dme_dme_phi_rad
+			Description:
+			function that returns angle between 2 currently tuned DMEs.
+			Param:
+			ppos: present aircraft position
+			dist_1: distance to first dme(tuned in dme_dme radio #1)
+			dist_2: distance to second dme(tuned in dme_dme radio #2)
+			Return:
+			returns angle between -pi/2 and pi/2 in radians
+		*/
+
+		double get_curr_dme_dme_phi_rad(geo::point3d ppos, double dist_1, double dist_2);
+
+		/*
+			Function: get_curr_dme_dme_qual
+			Description:
+			function that returns the quality value of the currently tuned pair of DMEs. The
+			quality value is based on dist_1 and dist_2, which are supposed to be the distances
+			returned from DMEs themselves.
+			Param:
+			ppos: present aircraft position
+			dist_1: distance to first dme(tuned in dme_dme radio #1)
+			dist_2: distance to second dme(tuned in dme_dme radio #2)
+			Return:
+			returns a quality value in range [-1, 1]
+		*/
+
+		double get_curr_dme_dme_qual(double dist_1, double dist_2);
+
+		/*
+			Function: tune_dme_dme_cand
+			Description:
+			function that tunes dme_dme radio #1 and #2 to navaids provided by cand_pair
+			Param:
+			cand_pair: pair of candidates for DME DME position
+			c_time: current time(obtained using main_timer)
+			Return:
+			nothing to see here
+		*/
 
 		void tune_dme_dme_cand(radnav_util::navaid_pair_t cand_pair, double c_time);
 
-		void update_dme_dme_conn(double c_time);
+		/*
+			Function: update_dme_dme_pos
+			Description:
+			function that calculates the DME/DME position and outputs it via debug datarefs(subject to change)
+			Param:
+			dist_1: distance to dme tuned by dme_dme radio #1
+			c_time: distance to dme tuned by dme_dme radio #2
+			Return:
+			nothing to see here
+		*/
+
+		void update_dme_dme_pos(double dist_1, double dist_2);
+
+		void update_dme_dme_conn(double dist_1, double dist_2, double c_time);
 	};
 }
