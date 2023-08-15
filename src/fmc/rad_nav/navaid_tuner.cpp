@@ -250,9 +250,11 @@ namespace StratosphereAvionics
 			}
 			else
 			{
+				geo::point3d ppos = get_ac_pos();
 				double dist_1 = double(xp_databus->get_dataf(dme_dme_radios[0].dr_list.dme_nm, dme_dme_radios[0].dr_list.dr_idx));
 				double dist_2 = double(xp_databus->get_dataf(dme_dme_radios[1].dr_list.dme_nm, dme_dme_radios[1].dr_list.dr_idx));
-				double curr_qual = get_curr_dme_dme_qual(dist_1, dist_2);
+				double phi = get_curr_dme_dme_phi_rad(ppos, dist_1, dist_2);
+				double curr_qual = get_curr_dme_dme_qual(dist_1, dist_2, phi * RAD_TO_DEG);
 				std::string dme_dme_debug = dme_dme_radios[0].tuned_navaid.id + " " +
 					dme_dme_radios[1].tuned_navaid.id + " " + std::to_string(curr_qual);
 				xp_databus->set_data_s(out_drs.curr_dme_pair_debug, dme_dme_debug);
@@ -262,7 +264,7 @@ namespace StratosphereAvionics
 					return;
 				}
 
-				update_dme_dme_conn(dist_1, dist_2, c_time_sec);
+				update_dme_dme_conn(dist_1, dist_2, phi, c_time_sec);
 			}
 		}
 	}
@@ -382,19 +384,21 @@ namespace StratosphereAvionics
 		{
 			libnav::waypoint_entry* data_1 = &dme_dme_radios[0].tuned_navaid.data;
 			libnav::waypoint_entry* data_2 = &dme_dme_radios[1].tuned_navaid.data;
-
-			// Get encounter geometry angle for currently tuned DMEs.
-			double gnd_dist_1 = dme_dme_radios[0].get_gnd_dist(dist_1, ppos.alt_ft);
-			double gnd_dist_2 = dme_dme_radios[1].get_gnd_dist(dist_2, ppos.alt_ft);
-			double gnd_dist_3 = data_1->pos.get_line_dist_nm(data_2->pos, data_1->navaid->elevation, data_2->navaid->elevation);
-			// Verify that triangle exists
-			if (gnd_dist_1 + gnd_dist_2 > gnd_dist_3 && gnd_dist_1 + gnd_dist_3 > gnd_dist_2 && gnd_dist_2 + gnd_dist_3 > gnd_dist_1)
+			if (data_1->navaid && data_2->navaid)
 			{
-				// Just applying the good old law of cosines. Nothing to see here :)
-				double cos_phi = (std::pow(gnd_dist_1, 2) + std::pow(gnd_dist_2, 2) - std::pow(gnd_dist_3, 2)) /
-					(gnd_dist_1 * gnd_dist_2);
-				return acos(cos_phi);
-			}
+				// Get encounter geometry angle for currently tuned DMEs.
+				double gnd_dist_1 = dme_dme_radios[0].get_gnd_dist(dist_1, ppos.alt_ft);
+				double gnd_dist_2 = dme_dme_radios[1].get_gnd_dist(dist_2, ppos.alt_ft);
+				double gnd_dist_3 = data_1->pos.get_line_dist_nm(data_2->pos, data_1->navaid->elevation, data_2->navaid->elevation);
+				// Verify that triangle exists
+				if (gnd_dist_1 + gnd_dist_2 > gnd_dist_3 && gnd_dist_1 + gnd_dist_3 > gnd_dist_2 && gnd_dist_2 + gnd_dist_3 > gnd_dist_1)
+				{
+					// Just applying the good old law of cosines. Nothing to see here :)
+					double cos_phi = (std::pow(gnd_dist_1, 2) + std::pow(gnd_dist_2, 2) - std::pow(gnd_dist_3, 2)) /
+						(gnd_dist_1 * gnd_dist_2);
+					return acos(cos_phi);
+				}
+			}			
 		}
 		return 0;
 	}
@@ -409,17 +413,18 @@ namespace StratosphereAvionics
 		ppos: present aircraft position
 		dist_1: distance to first dme(tuned in dme_dme radio #1)
 		dist_2: distance to second dme(tuned in dme_dme radio #2)
+		phi_deg: encounter geometry angle between each DME and the aircraft
+		e.g. for DMEs C and B and aircraft position A the angle phi would be CAB
 		Return:
 		returns a quality value in range [-1, 1]
 	*/
 
-	double NavaidTuner::get_curr_dme_dme_qual(double dist_1, double dist_2)
+	double NavaidTuner::get_curr_dme_dme_qual(double dist_1, double dist_2, double phi_deg)
 	{
 		geo::point3d ppos = get_ac_pos();
-		double phi = get_curr_dme_dme_phi_rad(ppos, dist_1, dist_2) * RAD_TO_DEG;
 		double qual_1 = dme_dme_radios[0].get_tuned_qual(ppos, dist_1);
 		double qual_2 = dme_dme_radios[1].get_tuned_qual(ppos, dist_2);
-		return radnav_util::get_dme_dme_qual(phi, qual_1, qual_2);
+		return radnav_util::get_dme_dme_qual(phi_deg, qual_1, qual_2);
 	}
 
 	/*
@@ -458,7 +463,7 @@ namespace StratosphereAvionics
 		nothing to see here
 	*/
 
-	void NavaidTuner::update_dme_dme_pos(double dist_1, double dist_2)
+	void NavaidTuner::update_dme_dme_pos(double dist_1, double dist_2, double phi_rad)
 	{
 		if (dme_dme_radios[0].tuned_navaid.data.navaid && dme_dme_radios[1].tuned_navaid.data.navaid)
 		{
@@ -483,6 +488,7 @@ namespace StratosphereAvionics
 				double d_1 = pos[0].get_great_circle_distance_nm(ppos.p);
 				double d_2 = pos[1].get_great_circle_distance_nm(ppos.p);
 				geo::point* dme_dme_pos;
+				double pos_fom_m = radnav_util::get_dme_dme_fom(dist_1, dist_2, phi_rad) * NM_TO_M;
 				if (d_1 < d_2)
 				{
 					dme_dme_pos = &pos[0];
@@ -491,18 +497,21 @@ namespace StratosphereAvionics
 				{
 					dme_dme_pos = &pos[1];
 				}
-				xp_databus->set_datad(out_drs.dme_dme_pos_lat, pos[0].lat_deg);
-				xp_databus->set_datad(out_drs.dme_dme_pos_lon, pos[0].lon_deg);
+
+				xp_databus->set_datad(out_drs.dme_dme_pos_lat, dme_dme_pos->lat_deg);
+				xp_databus->set_datad(out_drs.dme_dme_pos_lon, dme_dme_pos->lon_deg);
+				xp_databus->set_datad(out_drs.dme_dme_pos_fom, pos_fom_m);
 			}
 			else
 			{
 				xp_databus->set_datad(out_drs.dme_dme_pos_lat, 0);
 				xp_databus->set_datad(out_drs.dme_dme_pos_lon, 0);
+				xp_databus->set_datad(out_drs.dme_dme_pos_fom, 0);
 			}
 		}
 	}
 
-	void NavaidTuner::update_dme_dme_conn(double dist_1, double dist_2, double c_time)
+	void NavaidTuner::update_dme_dme_conn(double dist_1, double dist_2, double phi_rad, double c_time)
 	{
 		bool is_sig_recv_1 = dme_dme_radios[0].is_sig_recv(NAV_DME);
 		bool is_sig_recv_2 = dme_dme_radios[1].is_sig_recv(NAV_DME);
@@ -513,7 +522,7 @@ namespace StratosphereAvionics
 
 			if (c_time >= dme_dme_pos_update_last + RADIO_POS_UPDATE_DELAY_SEC)
 			{
-				update_dme_dme_pos(dist_1, dist_2);
+				update_dme_dme_pos(dist_1, dist_2, phi_rad);
 				dme_dme_pos_update_last = c_time;
 			}
 		}

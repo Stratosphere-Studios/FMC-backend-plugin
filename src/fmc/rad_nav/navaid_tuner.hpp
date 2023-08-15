@@ -179,11 +179,13 @@ namespace StratosphereAvionics
 			ppos: present aircraft position
 			dist_1: distance to first dme(tuned in dme_dme radio #1)
 			dist_2: distance to second dme(tuned in dme_dme radio #2)
+			phi_deg: encounter geometry angle between each DME and the aircraft
+			e.g. for DMEs C and B and aircraft position A the angle phi would be CAB
 			Return:
 			returns a quality value in range [-1, 1]
 		*/
 
-		double get_curr_dme_dme_qual(double dist_1, double dist_2);
+		double get_curr_dme_dme_qual(double dist_1, double dist_2, double phi_deg);
 
 		/*
 			Function: tune_dme_dme_cand
@@ -209,8 +211,8 @@ namespace StratosphereAvionics
 			nothing to see here
 		*/
 
-		void update_dme_dme_pos(double dist_1, double dist_2);
+		void update_dme_dme_pos(double dist_1, double dist_2, double phi_rad);
 
-		void update_dme_dme_conn(double dist_1, double dist_2, double c_time);
+		void update_dme_dme_conn(double dist_1, double dist_2, double phi_rad, double c_time);
 	};
 }
