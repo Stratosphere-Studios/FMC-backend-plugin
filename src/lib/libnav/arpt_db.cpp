@@ -1,5 +1,14 @@
 /*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
 	Author: discord/bruh4096#4512
+
+	This file contains definitions of member functions for ArptDB class. ArptDB is an interface which allows
+	to create a custom airport data base using x-plane's apt.dat. The class also allows you to access the data
+	base and perform some searches on it.
 */
 
 #include "arpt_db.hpp"
@@ -54,6 +63,18 @@ namespace libnav
 
 	// These functions need to be public because they're used in 
 	// other threads when ArptDB object is constructed.
+
+	/*
+		Function: load_from_sim_db
+		Description:
+		Function that parses airport data from x-plane's apt.dat and adds all of the neccessary data to 
+		arpt_db and rnw_db. The function also creates 2 .dat files for caching all of the neccessary data. 
+		All airports with maximum runway length below MIN_RWY_LENGTH_M are rejected.
+		Param:
+		-----
+		Return:
+		Returns 1 if x-plane's airport data base has been loaded successfully. Otherwise, returns 0.
+	*/
 
 	int ArptDB::load_from_sim_db()
 	{
@@ -169,6 +190,18 @@ namespace libnav
 		return 0;
 	}
 
+	/*
+		Function: write_to_arpt_db
+		Description:
+		Creates and populates a .dat file with all of the useful information about each airport.
+		This includes icao code, latitude, longitude, elevation AMSL in feet, transition altitude 
+		and transition level.
+		Param:
+		-----
+		Return:
+		------
+	*/
+
 	void ArptDB::write_to_arpt_db()
 	{
 		std::ofstream out(custom_arpt_db_path, std::ofstream::out);
@@ -191,6 +224,18 @@ namespace libnav
 		}
 		out.close();
 	}
+
+	/*
+		Function: write_to_rnw_db
+		Description:
+		Creates and populates a .dat file with all of the useful information about each airport's runway.
+		This includes id of the runway(e.g. 08L), latitude and longitude for strat poind and end point and
+		the length of the displaced threshold in meters.
+		Param:
+		-----
+		Return:
+		------
+	*/
 
 	void ArptDB::write_to_rnw_db()
 	{
@@ -223,6 +268,16 @@ namespace libnav
 		out.close();
 	}
 
+	/*
+		Function: load_from_custom_arpt
+		Description:
+		Loads data from .dat file created by write_to_arpt_db into arpt_db.
+		Param:
+		-----
+		Return:
+		------
+	*/
+
 	void ArptDB::load_from_custom_arpt()
 	{
 		std::ifstream file(custom_arpt_db_path, std::ifstream::in);
@@ -245,6 +300,16 @@ namespace libnav
 		}
 		file.close();
 	}
+
+	/*
+		Function: load_from_custom_rnw
+		Description:
+		Loads data from .dat file created by write_to_rnw_db into rnw_db.
+		Param:
+		Param pam pam
+		Return:
+		------
+	*/
 
 	void ArptDB::load_from_custom_rnw()
 	{
@@ -284,27 +349,54 @@ namespace libnav
 
 	// Normal user interface functions:
 
+	/*
+		Function: load_from_custom_rnw
+		Description:
+		Checks if the ICAO code belongs to an airport in the data base.
+		Param:
+		icao_code: ICAO code that we want to check
+		Return:
+		true if if there's an airport in the data base with such ICAO code. Otherwise, returns false.
+	*/
+
 	bool ArptDB::is_airport(std::string icao_code)
 	{
 		std::lock_guard<std::mutex> lock(arpt_db_mutex);
 		return arpt_db->find(icao_code) != arpt_db->end();
 	}
 
+	/*
+		Function: get_airport_data
+		Description:
+		Gets data of an airport and returns it into an airport_data structure.
+		Param:
+		icao_code: ICAO code of target airport.
+		out: pointer to the airport_data structure, where the output will be written.
+		Return:
+		Returns 1 if any data has been written to out. Otherwise, returns 0.
+	*/
+
 	int ArptDB::get_airport_data(std::string icao_code, airport_data* out)
 	{
 		if (is_airport(icao_code))
 		{
 			std::lock_guard<std::mutex> lock(arpt_db_mutex);
-			airport_data tmp = arpt_db->at(icao_code);
-			out->pos.lat_deg = tmp.pos.lat_deg;
-			out->pos.lon_deg = tmp.pos.lon_deg;
-			out->elevation_ft = tmp.elevation_ft;
-			out->transition_alt_ft = tmp.transition_alt_ft;
-			out->transition_level = tmp.transition_level;
+			*out = arpt_db->at(icao_code);
 			return 1;
 		}
 		return 0;
 	}
+
+	/*
+		Function: get_apt_rwys
+		Description:
+		Gets data of all runways of an airport and returns it into an runway_data structure.
+		Param:
+		icao_code: ICAO code of target airport.
+		out: pointer to the runway_data structure, where the output will be written.
+		Return:
+		Returns number of runways of an airport if any data has been written to out. Otherwise, returns 0.
+	*/
 
 	int ArptDB::get_apt_rwys(std::string icao_code, runway_data* out)
 	{
@@ -322,6 +414,18 @@ namespace libnav
 		}
 		return 0;
 	}
+
+	/*
+		Function: get_rnw_data
+		Description:
+		Gets data of a specific runway of an airport and returns it into an runway_entry structure.
+		Param:
+		apt_icao: ICAO code of target airport.
+		rnw_id: id of a runway that we're looking for
+		out: pointer to the runway_entry structure, where the output will be written.
+		Return:
+		Returns 1 if runway data was found and written to out. Otherwise, returns 0.
+	*/
 
 	int ArptDB::get_rnw_data(std::string apt_icao, std::string rnw_id, runway_entry* out)
 	{
@@ -362,6 +466,17 @@ namespace libnav
 		file.close();
 		return false;
 	}
+
+	/*
+		Function: normalize_rnw_id
+		Description:
+		Adds a leading 0 to runway IDs that need it. Runway IDs in some airports in e.g. US don't have
+		leading 0s, however, in Boeing's data bases all runways have them.
+		Param:
+		id: target id
+		Return:
+		Returns a modified id.
+	*/
 
 	std::string ArptDB::normalize_rnw_id(std::string id)
 	{
