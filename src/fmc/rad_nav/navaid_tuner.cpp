@@ -106,7 +106,17 @@ namespace StratosphereAvionics
 		n_update_freq_hz = freq;
 
 		dme_dme_cand = new radnav_util::navaid_t[N_DME_DME_CAND];
+		for (int i = 0; i < N_DME_DME_CAND; i++)
+		{
+			dme_dme_cand[i] = {};
+		}
 		vor_dme_radio_modes = new int[N_VOR_DME_RADIOS];
+		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
+		{
+			vor_dme_radio_modes[i] = 0;
+		}
+		vor_dme_cand = {};
+		dme_dme_cand_pair = { dme_dme_cand, dme_dme_cand + 1, 0 };
 
 		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
 		{
@@ -243,7 +253,7 @@ namespace StratosphereAvionics
 				bool is_b_listed = black_list->is_black_listed(&tmp->id, &tmp->data, c_time_sec);
 				is_b_listed_any |= is_b_listed;
 			}
-
+			
 			if (is_b_listed_any)
 			{
 				tune_dme_dme_cand(cand_pair, c_time_sec);
@@ -296,6 +306,33 @@ namespace StratosphereAvionics
 	}
 
 	// Private functions:
+
+	/*
+		Function: cmp_dme_dme_pair
+		Description:
+		The following member function compares a dme_dme pair to a pair of
+		DMEs currently tuned by the dme_dme radios.
+		Param:
+		cand_pair: pair of DMEs that we want to compare
+		Return:
+		true if pairs are the same. Otherwise, returns false.
+	*/
+
+	bool NavaidTuner::cmp_dme_dme_pair(radnav_util::navaid_pair_t cand_pair)
+	{
+		int is_same = 0;
+		int is_same_reverse = 0; // is the cand_pair the same as our current pair, but reversed?
+
+		radnav_util::navaid_t* cand_navaids[N_DME_DME_CAND] = { cand_pair.n1, cand_pair.n2 };
+		for (int i = 0; i < N_DME_DME_RADIOS; i++)
+		{
+			int check_val = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[i]->data, sizeof(libnav::waypoint_entry));
+			int check_val_rev = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[N_DME_DME_RADIOS - i - 1]->data, sizeof(libnav::waypoint_entry));
+			is_same += int(check_val == 0);
+			is_same_reverse += int(check_val_rev == 0);
+		}
+		return is_same == N_DME_DME_RADIOS || is_same_reverse == N_DME_DME_RADIOS;
+	}
 
 	/*
 		Function: black_list_tuned_navaid
@@ -440,12 +477,11 @@ namespace StratosphereAvionics
 
 	void NavaidTuner::tune_dme_dme_cand(radnav_util::navaid_pair_t cand_pair, double c_time)
 	{
-		radnav_util::navaid_t* cand_navaids[N_DME_DME_CAND] = { cand_pair.n1, cand_pair.n2 };
-		for (int i = 0; i < N_DME_DME_RADIOS; i++)
+		bool are_same = cmp_dme_dme_pair(cand_pair);
+		if (!are_same)
 		{
-			int check_val = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[i]->data, sizeof(libnav::waypoint_entry));
-
-			if (check_val)
+			radnav_util::navaid_t* cand_navaids[N_DME_DME_CAND] = { cand_pair.n1, cand_pair.n2 };
+			for (int i = 0; i < N_DME_DME_RADIOS; i++)
 			{
 				dme_dme_radios[i].tune(*cand_navaids[i], c_time);
 			}

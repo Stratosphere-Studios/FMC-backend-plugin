@@ -133,6 +133,19 @@ namespace StratosphereAvionics
 
 
 		/*
+			Function: cmp_dme_dme_pair
+			Description:
+			The following member function compares a dme_dme pair to a pair of
+			DMEs currently tuned by the dme_dme radios.
+			Param:
+			cand_pair: pair of DMEs that we want to compare
+			Return:
+			true if pairs are the same. Otherwise, returns false.
+		*/
+
+		bool cmp_dme_dme_pair(radnav_util::navaid_pair_t cand_pair);
+
+		/*
 			Function: black_list_tuned_navaid
 			Description:
 			The following member function first tries to delay the radio tuning
