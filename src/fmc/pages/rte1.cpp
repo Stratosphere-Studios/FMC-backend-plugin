@@ -1,3 +1,15 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	Author: discord/bruh4096#4512
+
+	This file contains definitions of member functions used within the REF NAV DATA page.
+*/
+
+
 namespace StratosphereAvionics
 {
 	/*
@@ -18,11 +30,11 @@ namespace StratosphereAvionics
 		{
 			dr_cache->set_val_s(in_dr, icao_curr);
 
-			size_t n_arpts = nav_db->get_airport_data(icao_curr, apt_data);
+			int n_arpts = nav_db->get_airport_data(icao_curr, apt_data);
 
 			if (n_arpts)
 			{
-				size_t n_rnw = nav_db->get_runway_data(icao_curr, rnw_data);
+				int n_rnw = nav_db->get_apt_rwys(icao_curr, rnw_data);
 
 				return true;
 			}
@@ -60,7 +72,7 @@ namespace StratosphereAvionics
 			{
 				dep_rnw_updated = true;
 				std::string dep_icao = xp_databus->get_data_s(in_drs.rte1.dep_icao);
-				size_t n_rnw = nav_db->get_runway_data(dep_icao, &dep_runways);
+				int n_rnw = nav_db->get_apt_rwys(dep_icao, &dep_runways);
 			}
 			if (ret2)
 			{
@@ -90,6 +102,8 @@ namespace StratosphereAvionics
 			}
 
 			update_scratch_msg();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 	}
 }

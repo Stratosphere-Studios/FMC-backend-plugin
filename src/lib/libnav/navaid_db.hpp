@@ -12,6 +12,9 @@
 #include "geo_utils.hpp"
 
 
+constexpr double VOR_MAX_SLANT_ANGLE_DEG = 40;
+constexpr double DME_DME_PHI_MIN_DEG = 30;
+constexpr double DME_DME_PHI_MAX_DEG = 180 - DME_DME_PHI_MIN_DEG;
 #define N_NAVAID_LINES_IGNORE 3; //Number of lines at the beginning of the .dat file to ignore
 
 
@@ -52,6 +55,10 @@ namespace libnav
 		waypoint_entry data;
 	};
 
+	typedef std::vector<libnav::waypoint> wpt_tile_t;
+
+	typedef std::unordered_map<std::string, std::vector<libnav::waypoint_entry>> wpt_db_t;
+
 
 	class WaypointEntryCompare
 	{
@@ -71,8 +78,7 @@ namespace libnav
 	{
 	public:
 
-		NavaidDB(std::string wpt_path, std::string navaid_path,
-			std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db);
+		NavaidDB(std::string wpt_path, std::string navaid_path, wpt_db_t* wpt_db);
 
 		bool is_loaded();
 
@@ -86,7 +92,7 @@ namespace libnav
 
 		// get_wpt_data returns 0 if waypoint is not in the database. 
 		// Otherwise, returns number of items written to out.
-		size_t get_wpt_data(std::string id, std::vector<waypoint_entry>* out);
+		int get_wpt_data(std::string id, std::vector<waypoint_entry>* out);
 
 		~NavaidDB();
 
@@ -102,7 +108,7 @@ namespace libnav
 		std::mutex wpt_db_mutex;
 		std::mutex navaid_db_mutex;
 
-		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_cache;
+		wpt_db_t* wpt_cache;
 
 		void add_to_wpt_cache(waypoint wpt);
 
@@ -121,11 +127,78 @@ namespace libnav
 
 namespace radnav_util
 {
-	struct navaid
+	/*
+		The following function returns a fom in nm for a DME using a formula
+		from RTCA DO-236C appendix C-3. The only argument is the total distance to 
+		the station.
+	*/
+
+	double get_dme_fom(double dist_nm);
+
+	/*
+		The following function returns a fom in nm for a VOR using a formula
+		from RTCA DO-236C appendix C-2.The only argument is the total distance to 
+		the station.
+	*/
+
+	double get_vor_fom(double dist_nm);
+
+	/*
+		The following function returns a fom in nm for a VOR DME station.
+		It accepts the total distance to the station as its only argument.
+	*/
+
+	double get_vor_dme_fom(double dist_nm);
+
+	/*
+		This function calculates a quality value for a pair of navaids given
+		the encounter geometry angle and their respective qualities.
+	*/
+
+	/*
+		Function: get_dme_dme_fom
+		Description:
+		This function calculates a FOM value for a pair of navaids given
+		the encounter geometry angle and their respective distances.
+		Param:
+		dist1_nm: quality value of the first DME
+		dist2_nm: quality value of the second DME
+		phi_rad: encounter geometry angle between 2 DMEs
+		Return:
+		Returns a FOM value.
+	*/
+
+	double get_dme_dme_fom(double dist1_nm, double dist2_nm, double phi_rad);
+
+	double get_dme_dme_qual(double phi_deg, double q1, double q2);
+
+
+	struct navaid_t
 	{
 		std::string id;
 		libnav::waypoint_entry data;
-		double qual, time_blacklisted_sec;
-		bool is_blacklisted;
+		double qual;
+
+		/*
+			This function calculates the quality ratio for a navaid.
+			Navaids are sorted by this ratio to determine the best 
+			suitable candidate(s) for radio navigation.
+		*/
+
+		void calc_qual(geo::point3d ac_pos);
+	};
+
+	struct navaid_pair_t
+	{
+		navaid_t* n1;
+		navaid_t* n2;
+		double qual;
+
+		/*
+			This function calculates a quality value for a pair of navaids.
+			This is useful when picking candidates for DME/DME position calculation.
+		*/
+
+		void calc_qual(geo::point ac_pos);
 	};
 };

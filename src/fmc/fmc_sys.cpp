@@ -1,6 +1,11 @@
 /*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+ 
 	This source file contains the implementation of the fmc for 
-	B77W by stratosphere studios.
+	B77W by stratosphere studios. Author: discord/bruh4096#4512
 */
 
 #include "fmc_sys.hpp"
@@ -16,8 +21,14 @@ namespace StratosphereAvionics
 
 	// Public member functions:
 
-	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_out_drs out)
+	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, 
+							 double cache_tile_size, int hz)
 	{
+		n_refresh_hz = hz;
+		tile_size = cache_tile_size;
+		ac_pos_last = {};
+
+		in_drs = in;
 		out_drs = out;
 
 		xp_databus = databus;
@@ -36,6 +47,8 @@ namespace StratosphereAvionics
 		airports = {};
 		runways = {};
 
+		clock = new libtime::Timer();
+
 		// Initialize data bases
 
 		apt_db = new libnav::ArptDB(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
@@ -43,6 +56,23 @@ namespace StratosphereAvionics
 		nav_db = new libnav::NavDB(apt_db, navaid_db);
 
 		dr_cache = new XPDataBus::DataRefCache();
+
+		navaid_tuner = new NavaidTuner(databus, in_drs.nav_tuner, out_drs.nav_tuner, rad_nav_cand_update_time_sec);
+		navaid_selector = new NavaidSelector(databus, navaid_tuner, out_drs.nav_selector, cache_tile_size,
+										     min_navaid_dist_nm, rad_nav_cand_update_time_sec);
+	}
+
+	geo::point3d AvionicsSys::get_ac_pos()
+	{
+		std::lock_guard<std::mutex> lock(ac_pos_mutex);
+
+		return ac_pos;
+	}
+
+	std::string AvionicsSys::get_fpln_dep_icao()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.dep_apt.icao;
 	}
 
 	void AvionicsSys::set_fpln_dep_apt(libnav::airport apt)
@@ -50,6 +80,18 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_apt = apt;
 		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
+	}
+
+	libnav::airport AvionicsSys::get_fpln_arr_apt()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.arr_apt;
+	}
+
+	std::string AvionicsSys::get_fpln_arr_icao()
+	{
+		std::lock_guard<std::mutex> lock(fpln_mutex);
+		return pln.arr_apt.icao;
 	}
 
 	void AvionicsSys::set_fpln_arr_apt(libnav::airport apt)
@@ -77,15 +119,19 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(navaid_inhibit_mutex);
 		if (idx >= 0 && idx < navaid_inhibit.size())
 		{
-			navaid_inhibit[idx] = id;
+			rm_from_bl(navaid_inhibit[idx]); // Remove all previously blacklisted navaids
+
 			if (id != "")
 			{
+				add_to_bl(id);
+
 				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
 			}
 			else
 			{
 				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), "\0", -1);
 			}
+			navaid_inhibit[idx] = id;
 		}
 	}
 
@@ -94,21 +140,29 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(vor_inhibit_mutex);
 		if (idx >= 0 && idx < vor_inhibit.size())
 		{
-			vor_inhibit[idx] = id;
+			rm_from_bl(vor_inhibit[idx]); // Remove all previously blacklisted navaids
+			
 			if (id != "")
 			{
+				add_to_bl(id);
+
 				xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
 			}
 			else
 			{
 				xp_databus->set_data_s(out_drs.excl_vors.at(idx), "\0", -1);
 			}
+			vor_inhibit[idx] = id;
 		}
 	}
 
 	void AvionicsSys::update_sys()
 	{
+		update_ac_pos();
 
+		navaid_tuner->set_ac_pos(ac_pos);
+
+		navaid_selector->update(&waypoints, ac_pos, clock->get_curr_time());
 	}
 
 	void AvionicsSys::main_loop()
@@ -117,15 +171,20 @@ namespace StratosphereAvionics
 		while (!sim_shutdown.load(std::memory_order_relaxed))
 		{
 			update_sys();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 	}
 
 	AvionicsSys::~AvionicsSys()
 	{
+		delete[] navaid_selector;
+		delete[] navaid_tuner;
 		delete[] nav_db;
 		delete[] apt_db;
 		delete[] navaid_db;
 		delete[] dr_cache;
+		delete[] clock;
 	}
 
 	// Private member functions:
@@ -133,7 +192,7 @@ namespace StratosphereAvionics
 	void AvionicsSys::update_load_status()
 	{
 		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 1);
-		if (!sim_shutdown.load(std::memory_order_seq_cst))
+		if (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
 			bool sts = nav_db->is_loaded();
 			if (!sts)
@@ -145,10 +204,56 @@ namespace StratosphereAvionics
 		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 0);
 	}
 
+	void AvionicsSys::update_ac_pos()
+	{
+		double baro_ft_1 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		double baro_ft_2 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		double baro_ft_3 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
+		std::lock_guard<std::mutex> lock(ac_pos_mutex);
+		ac_pos.p.lat_deg = xp_databus->get_datad(in_drs.sim_ac_lat_deg);
+		ac_pos.p.lon_deg = xp_databus->get_datad(in_drs.sim_ac_lon_deg);
+		ac_pos.alt_ft = (baro_ft_1 + baro_ft_2 + baro_ft_3) / 3;
+	}
+
+	/*
+		Blacklists all navaids with given id forever.
+	*/
+
+	void AvionicsSys::add_to_bl(std::string id)
+	{
+		std::vector<libnav::waypoint_entry> entries;
+		nav_db->get_wpt_data(id, &entries);
+
+		for (int i = 0; i < entries.size(); i++)
+		{
+			navaid_tuner->black_list->add_to_black_list(&id, &entries.at(i));
+		}
+	}
+
+	/*
+		Removes all navaids with given id from black list.
+	*/
+
+	void AvionicsSys::rm_from_bl(std::string id)
+	{
+		std::vector<libnav::waypoint_entry> entries;
+		nav_db->get_wpt_data(id, &entries);
+
+		for (int i = 0; i < entries.size(); i++)
+		{
+			libnav::waypoint tmp = { id, entries.at(i) };
+			navaid_tuner->black_list->remove_from_black_list(&id, &entries.at(i));
+		}
+	}
+
 	// FMC definitions:
 
-	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out)
+	// Public member functions:
+
+	FMC::FMC(std::shared_ptr<AvionicsSys> av, fmc_in_drs in, fmc_out_drs out, int hz)
 	{
+		n_refresh_hz = hz;
+
 		avionics = av;
 		nav_db = avionics->nav_db;
 		in_drs = in;
@@ -181,13 +286,13 @@ namespace StratosphereAvionics
 
 	void FMC::main_loop()
 	{
-		while (!sim_shutdown.load(std::memory_order_relaxed))
+		while (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
 			int page = xp_databus->get_datai(in_drs.curr_page);
 			switch (page)
 			{
 			case PAGE_REF_NAV_DATA:
-				update_ref_nav();
+				ref_nav_main_loop();
 			case PAGE_RTE1:
 				update_rte1();
 			}
@@ -197,5 +302,13 @@ namespace StratosphereAvionics
 	FMC::~FMC()
 	{
 		delete[] dr_cache;
+	}
+
+	// Private member functions:
+
+	int FMC::get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry* out)
+	{
+		std::string arr_icao = avionics->get_fpln_arr_icao();
+		return nav_db->get_rnw_data(arr_icao, rwy_id, out);
 	}
 }

@@ -1,3 +1,15 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	Author: discord/bruh4096#4512
+
+	This file contains definitions of member functions used within the REF NAV DATA page.
+*/
+
+
 namespace StratosphereAvionics
 {
 	libnav::waypoint_entry FMC::update_sel_des_wpt(std::string id,
@@ -67,9 +79,12 @@ namespace StratosphereAvionics
 
 			curr_subpage = libnav::clamp(xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page), n_subpages, 1);
 			user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
 		}
 
 		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 0);
+		reset_sel_navaid();
 
 		if (user_idx != -1 && curr_subpage <= n_subpages)
 		{

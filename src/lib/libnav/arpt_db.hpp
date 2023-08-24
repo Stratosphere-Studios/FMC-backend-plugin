@@ -1,3 +1,17 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	Author: discord/bruh4096#4512
+
+	This file contains declarations of member functions for ArptDB class. ArptDB is an interface which allows
+	to create a custom airport data base using x-plane's apt.dat. The class also allows you to access the data
+	base and perform some searches on it.
+*/
+
+
 #pragma once
 
 #include <future>
@@ -8,10 +22,12 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <ctype.h>
 #include "str_utils.hpp"
 #include "geo_utils.hpp"
 
 
+constexpr double DB_VERSION = 1.0; // Change this if you want to rebuild runway and airport data bases
 #define N_ARPT_LINES_IGNORE 3;
 #define N_RNW_ITEMS_IGNORE_BEGINNING 8; // Number of items to ignore at the beginning of the land runway declaration.
 #define N_RNW_ITEMS_IGNORE_END 5;
@@ -39,7 +55,7 @@ namespace libnav
 		{
 			if (impl_length_m <= 0)
 			{
-				impl_length_m = start.getGreatCircleDistanceNM(end) * NM_TO_M;
+				impl_length_m = start.get_great_circle_distance_nm(end) * NM_TO_M;
 			}
 			return impl_length_m;
 		}
@@ -104,9 +120,11 @@ namespace libnav
 
 		bool is_airport(std::string icao_code);
 
-		size_t get_airport_data(std::string icao_code, airport_data* out);
+		int get_airport_data(std::string icao_code, airport_data* out);
 
-		size_t get_runway_data(std::string icao_code, runway_data* out);
+		int get_apt_rwys(std::string icao_code, runway_data* out);
+
+		int get_rnw_data(std::string apt_icao, std::string rnw_id, runway_entry* out);
 
 	private:
 		std::string custom_arpt_db_sign = "ARPTDB";
@@ -139,6 +157,8 @@ namespace libnav
 		std::unordered_map<std::string, std::unordered_map<std::string, runway_entry>>* rnw_db;
 
 		static bool does_db_exist(std::string path, std::string sign);
+
+		std::string normalize_rnw_id(std::string id);
 
 		double parse_runway(std::string line, std::vector<runway>* rnw); // Returns runway length in meters
 

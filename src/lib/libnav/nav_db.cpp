@@ -1,3 +1,7 @@
+/*
+	Author: discord/bruh4096#4512
+*/
+
 #include "nav_db.hpp"
 
 
@@ -16,19 +20,24 @@ namespace libnav
 
 	// Wrappers around ArptDB member functions.
 
-	size_t NavDB::get_airport_data(std::string icao_code, airport_data* out)
+	int NavDB::get_airport_data(std::string icao_code, airport_data* out)
 	{
 		return arpt_db->get_airport_data(icao_code, out);
 	}
 
-	size_t NavDB::get_runway_data(std::string icao_code, runway_data* out)
+	int NavDB::get_apt_rwys(std::string icao_code, runway_data* out)
 	{
-		return arpt_db->get_runway_data(icao_code, out);
+		return arpt_db->get_apt_rwys(icao_code, out);
+	}
+
+	int NavDB::get_rnw_data(std::string apt_icao, std::string rnw_id, runway_entry* out)
+	{
+		return arpt_db->get_rnw_data(apt_icao, rnw_id, out);
 	}
 
 	// Wrappers around NavaidDB member functions.
 
-	size_t NavDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
+	int NavDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
 	{
 		return navaid_db->get_wpt_data(id, out);
 	}

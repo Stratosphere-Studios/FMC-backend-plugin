@@ -8,8 +8,6 @@ if(WIN32)
 	TARGET_COMPILE_OPTIONS(libnav PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif(WIN32)
 
-add_xplane_sdk_definitions(libnav 400)
-
 if(UNIX AND NOT APPLE)
     set_property(TARGET libnav PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()

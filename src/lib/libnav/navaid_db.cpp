@@ -4,20 +4,19 @@ namespace libnav
 {
 	bool WaypointEntryCompare::operator()(waypoint_entry w1, waypoint_entry w2)
 	{
-		double d1 = w1.pos.getGreatCircleDistanceNM(ac_pos);
-		double d2 = w2.pos.getGreatCircleDistanceNM(ac_pos);
+		double d1 = w1.pos.get_great_circle_distance_nm(ac_pos);
+		double d2 = w2.pos.get_great_circle_distance_nm(ac_pos);
 		return d1 < d2;
 	}
 
 	bool WaypointCompare::operator()(waypoint w1, waypoint w2)
 	{
-		double d1 = w1.data.pos.getGreatCircleDistanceNM(ac_pos);
-		double d2 = w2.data.pos.getGreatCircleDistanceNM(ac_pos);
+		double d1 = w1.data.pos.get_great_circle_distance_nm(ac_pos);
+		double d2 = w2.data.pos.get_great_circle_distance_nm(ac_pos);
 		return d1 < d2;
 	}
 
-	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path,
-		std::unordered_map<std::string, std::vector<waypoint_entry>>* wpt_db)
+	NavaidDB::NavaidDB(std::string wpt_path, std::string navaid_path, wpt_db_t* wpt_db)
 	{
 		// Pre-defined stuff
 
@@ -153,13 +152,13 @@ namespace libnav
 		return false;
 	}
 
-	size_t NavaidDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
+	int NavaidDB::get_wpt_data(std::string id, std::vector<waypoint_entry>* out)
 	{
 		if (is_wpt(id))
 		{
 			std::lock_guard<std::mutex> lock(wpt_db_mutex);
 			std::vector<waypoint_entry>* waypoints = &wpt_cache->at(id);
-			size_t n_waypoints = waypoints->size();
+			int n_waypoints = int(waypoints->size());
 			for (int i = 0; i < n_waypoints; i++)
 			{
 				out->push_back(waypoints->at(i));
@@ -303,5 +302,168 @@ namespace libnav
 		comp.ac_pos = p;
 
 		sort(vec->begin(), vec->end(), comp);
+	}
+};
+
+
+namespace radnav_util
+{
+	/*
+		The following function returns a fom in nm for a DME using a formula
+		from RTCA DO-236C appendix C-3. The only argument is the total distance to
+		the station.
+	*/
+
+	double get_dme_fom(double dist_nm)
+	{
+		double max_val = std::pow(0.085, 2);
+		double tmp_val = std::pow(0.00125 * dist_nm, 2);
+		if (max_val < tmp_val)
+		{
+			max_val = tmp_val;
+		}
+		double variance = std::pow(0.05, 2) + max_val;
+		// Now convert variance to FOM(standard_deviation * 2)
+		return sqrt(variance) * 2;
+	}
+
+	/*
+		The following function returns a fom in nm for a VOR using a formula
+		from RTCA DO-236C appendix C-2.The only argument is the total distance to
+		the station.
+	*/
+
+	double get_vor_fom(double dist_nm)
+	{
+		double variance = std::pow((0.0122 * dist_nm), 2) + std::pow((0.0175 * dist_nm), 2);
+		return sqrt(variance) * 2;
+	}
+
+	/*
+		The following function returns a fom in nm for a VOR DME station.
+		It accepts the total distance to the station as its only argument.
+	*/
+
+	double get_vor_dme_fom(double dist_nm)
+	{
+		double dme_fom = get_dme_fom(dist_nm);
+		double vor_fom = get_vor_fom(dist_nm);
+		if (vor_fom > dme_fom)
+		{
+			return vor_fom;
+		}
+		return dme_fom;
+	}
+
+	/*
+		Function: get_dme_dme_fom
+		Description:
+		This function calculates a FOM value for a pair of navaids given
+		the encounter geometry angle and their respective distances.
+		Param:
+		dist1_nm: quality value of the first DME
+		dist2_nm: quality value of the second DME
+		phi_rad: encounter geometry angle between 2 DMEs
+		Return:
+		Returns a FOM value.
+	*/
+
+	double get_dme_dme_fom(double dist1_nm, double dist2_nm, double phi_rad)
+	{
+		double sin_phi = sin(phi_rad);
+		if(sin_phi)
+		{
+			double dme1_fom = get_dme_fom(dist1_nm);
+			double dme2_fom = get_dme_fom(dist2_nm);
+			if (dme1_fom > dme2_fom)
+			{
+				return dme1_fom / sin(phi_rad);
+			}
+			return dme2_fom / sin(phi_rad);
+		}
+		return 0;
+	}
+
+	/*
+		Function: get_dme_dme_qual
+		Description:
+		This function calculates a quality value for a pair of navaids given
+		the encounter geometry angle and their respective qualities.
+		Param:
+		phi_deg: encounter geometry angle between 2 DMEs
+		q1: quality value of the first DME
+		q2: quality value of the second DME
+		Return:
+		Returns a quality value. The higher the quality value, the better.
+	*/
+
+	double get_dme_dme_qual(double phi_deg, double q1, double q2)
+	{
+		if (phi_deg > DME_DME_PHI_MIN_DEG && phi_deg < DME_DME_PHI_MAX_DEG)
+		{
+			double min_qual = q1;
+			if (q2 < min_qual)
+			{
+				min_qual = q2;
+			}
+
+			double qual = (min_qual + 1 - abs(90 - phi_deg) / 90) / 2;
+			return qual;
+		}
+		return -1;
+	}
+
+	/*
+		This function calculates the quality ratio for a navaid.
+		Navaids are sorted by this ratio to determine the best 
+		suitable candidate(s) for radio navigation.
+	*/
+
+	void navaid_t::calc_qual(geo::point3d ac_pos)
+	{
+		if (data.navaid)
+		{
+			double lat_dist_nm = ac_pos.p.get_great_circle_distance_nm(data.pos);
+
+			if (lat_dist_nm)
+			{
+				double v_dist_nm = abs(ac_pos.alt_ft - data.navaid->elevation) * FT_TO_NM;
+				double slant_deg = atan(v_dist_nm / lat_dist_nm) * RAD_TO_DEG;
+
+				if (slant_deg > 0 && slant_deg < VOR_MAX_SLANT_ANGLE_DEG)
+				{
+					double true_dist_nm = sqrt(lat_dist_nm * lat_dist_nm + v_dist_nm * v_dist_nm);
+
+					double tmp = 1 - (true_dist_nm / data.navaid->max_recv);
+					if (tmp >= 0)
+					{
+						qual = tmp;
+						return;
+					}
+				}
+			}
+		}
+		qual = -1;
+	}
+	
+	/*
+		This function calculates a quality value for a pair of navaids.
+		This is useful when picking candidates for DME/DME position calculation.
+	*/
+
+	void navaid_pair_t::calc_qual(geo::point ac_pos)
+	{
+		if (n1 != nullptr && n2 != nullptr)
+		{
+			double b1 = n1->data.pos.get_great_circle_bearing_deg(ac_pos);
+			double b2 = n2->data.pos.get_great_circle_bearing_deg(ac_pos);
+			double phi = abs(b1 - b2);
+			if (phi > 180)
+				phi = 360 - phi;
+
+			qual = get_dme_dme_qual(phi, n1->qual, n2->qual);
+			return;
+		}
+		qual = -1;
 	}
 }

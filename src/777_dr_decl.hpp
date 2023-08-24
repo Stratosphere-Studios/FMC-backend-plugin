@@ -4,14 +4,16 @@
 
 enum FMS_constants
 {
-	N_MAX_DATABUS_QUEUE_PROC = 1024,
+	N_MAX_DATABUS_QUEUE_PROC = 64,
 	N_CUSTOM_STR_DR_LENGTH = 2048,
 	REF_NAV_ICAO_BUF_LENGTH = 5,
 	FMC_SCREEN_LINE_LENGTH = 24,
 	N_REF_NAV_MAG_VAR_BUF_LENGTH = 4,
 	N_REF_NAV_NAVAID_BUF_LENGTH = 4, 
 	N_RTE_ICAO_BUF_LENGTH = 4,
-	N_RTE_RWY_BUF_LENGTH = 5
+	N_RTE_RWY_BUF_LENGTH = 5,
+
+	DEBUG_DR_LENGTH = 32
 };
 
 std::vector<int> fmc_l_int_dr = { -1, 1 };
@@ -26,6 +28,11 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 
 	{{"Strato/777/FMC/FMC_L/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_L/page", DR_WRITABLE, false, nullptr}, nullptr},
+
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, nullptr},
+
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[0]},
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
@@ -39,6 +46,11 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 
 	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, false, nullptr}, nullptr},
+
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, nullptr},
+
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[0]},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
@@ -50,18 +62,23 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lat", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lon", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_fom", DR_READONLY, false, nullptr}, nullptr},
+
 	// FMC L data refs:
 
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr},
 
 	// FMC R data refs:
 
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr}
 };
 
@@ -83,6 +100,19 @@ std::vector<DRUtil::dref_s> str_datarefs = {
 	{{"Strato/777/FMC/RTE1/dep_icao_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_ICAO_BUF_LENGTH},
 	{{"Strato/777/FMC/RTE1/arr_icao_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_ICAO_BUF_LENGTH},
 	{{"Strato/777/FMC/RTE1/dep_rnw_out", DR_READONLY, false, nullptr}, nullptr, N_RTE_RWY_BUF_LENGTH},
+
+	// Some debug datarefs up in here
+
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/c1", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/c2", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/c3", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/c4", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/c1", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/c2", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/c3", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/c4", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/tuned_pair", DR_READONLY, false, nullptr}, nullptr, DEBUG_DR_LENGTH},
 
 	// FMC L data refs:
 
@@ -129,6 +159,54 @@ std::vector<DRUtil::dref_s> str_datarefs = {
 	{{"Strato/777/FMC/FMC_R/scratchpad_msg", DR_READONLY, false, nullptr}, nullptr, FMC_SCREEN_LINE_LENGTH}
 };
 
+StratosphereAvionics::avionics_in_drs av_in = {
+											"sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+											"sim/cockpit2/gauges/indicators/altitude_ft_copilot",
+											"sim/cockpit2/gauges/indicators/altitude_ft_stby",
+											"sim/flightmodel/position/latitude",
+											"sim/flightmodel/position/longitude",
+
+											{
+												{
+													{
+														"sim/cockpit2/radios/actuators/nav_frequency_hz",
+														"sim/cockpit2/radios/indicators/nav1_nav_id",
+														"sim/cockpit2/radios/indicators/nav1_dme_id",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
+														0
+													},
+
+													{
+														"sim/cockpit2/radios/actuators/nav_frequency_hz",
+														"sim/cockpit2/radios/indicators/nav2_nav_id",
+														"sim/cockpit2/radios/indicators/nav2_dme_id",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
+														1
+													},
+
+													{
+														"sim/cockpit2/radios/actuators/nav_frequency_hz",
+														"sim/cockpit2/radios/indicators/nav3_nav_id",
+														"sim/cockpit2/radios/indicators/nav3_dme_id",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
+														2
+													},
+
+													{
+														"sim/cockpit2/radios/actuators/nav_frequency_hz",
+														"sim/cockpit2/radios/indicators/nav4_nav_id",
+														"sim/cockpit2/radios/indicators/nav4_dme_id",
+														"sim/cockpit2/radios/indicators/nav_bearing_deg_mag",
+														"sim/cockpit2/radios/indicators/nav_dme_distance_nm",
+														3
+													}
+												}
+											}
+};
+
 StratosphereAvionics::avionics_out_drs av_out = {
 											"Strato/777/FMC/RTE1/dep_icao_out",
 											"Strato/777/FMC/RTE1/arr_icao_out",
@@ -136,7 +214,26 @@ StratosphereAvionics::avionics_out_drs av_out = {
 											{"Strato/777/FMC/REF_NAV/navaid_1_out",
 											 "Strato/777/FMC/REF_NAV/navaid_2_out"},
 											{"Strato/777/FMC/REF_NAV/vor_1_out",
-											 "Strato/777/FMC/REF_NAV/vor_2_out"}
+											 "Strato/777/FMC/REF_NAV/vor_2_out"},
+
+											{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat",
+											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon",
+											 "Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom",
+											 "Strato/777/FMC/RAD_NAV/DME_DME/pos_lat",
+											 "Strato/777/FMC/RAD_NAV/DME_DME/pos_lon",
+											 "Strato/777/FMC/RAD_NAV/DME_DME/pos_fom",
+											 "Strato/777/FMC/RAD_NAV/DME_DME/tuned_pair"},
+
+											{{"Strato/777/FMC/RAD_NAV/VOR_DME/c1", 
+											  "Strato/777/FMC/RAD_NAV/VOR_DME/c2",
+											  "Strato/777/FMC/RAD_NAV/VOR_DME/c3",
+											  "Strato/777/FMC/RAD_NAV/VOR_DME/c4"},
+
+											 {"Strato/777/FMC/RAD_NAV/DME_DME/c1",
+											  "Strato/777/FMC/RAD_NAV/DME_DME/c2",
+											  "Strato/777/FMC/RAD_NAV/DME_DME/c3",
+											  "Strato/777/FMC/RAD_NAV/DME_DME/c4"}}
+											
 };
 
 StratosphereAvionics::fmc_in_drs fmc_l_in = {
@@ -166,7 +263,9 @@ StratosphereAvionics::fmc_out_drs fmc_l_out = {
 											  "Strato/777/FMC/FMC_L/REF_NAV/poi_lon",
 											  "Strato/777/FMC/FMC_L/REF_NAV/poi_elev",
 											  "Strato/777/FMC/FMC_L/REF_NAV/poi_freq",
-											  "Strato/777/FMC/FMC_L/REF_NAV/poi_mag_var"},
+											  "Strato/777/FMC/FMC_L/REF_NAV/poi_mag_var",
+											  "Strato/777/FMC/FMC_L/REF_NAV/poi_length_ft",
+											  "Strato/777/FMC/FMC_L/REF_NAV/poi_length_m"},
 
 											 {"Strato/777/FMC/FMC_L/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_L/SEL_WPT/n_subpages",
@@ -209,7 +308,9 @@ StratosphereAvionics::fmc_out_drs fmc_r_out = {
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_lon",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_elev",
 											  "Strato/777/FMC/FMC_R/REF_NAV/poi_freq",
-											  "Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var"},
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_mag_var",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_length_ft",
+											  "Strato/777/FMC/FMC_R/REF_NAV/poi_length_m"},
 
 											 {"Strato/777/FMC/FMC_R/SEL_WPT/is_active",
 											  "Strato/777/FMC/FMC_R/SEL_WPT/n_subpages",
