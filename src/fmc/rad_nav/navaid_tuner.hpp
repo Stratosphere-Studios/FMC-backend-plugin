@@ -15,6 +15,8 @@
 #include "radio.hpp"
 #include "timer.hpp"
 #include <cstring>
+#include <atomic>
+#include <thread>
 
 
 namespace StratosphereAvionics
@@ -28,7 +30,7 @@ namespace StratosphereAvionics
 	constexpr int N_VOR_DME_RADIOS = 2; // Number of radios auto-tuned for VOR/DME position estimation
 	constexpr int N_DME_DME_RADIOS = 2; // Number of radios auto-tuned for DME/DME position estimation
 	constexpr int N_VHF_NAV_RADIOS = N_VOR_DME_RADIOS + N_DME_DME_RADIOS;
-	constexpr std::memory_order UPDATE_FLG_ORDR = std::memory_order::memory_order_relaxed;
+	constexpr std::memory_order UPDATE_FLG_ORDR = std::memory_order_relaxed;
 	constexpr double RADIO_TUNE_DELAY_SEC = 2;
 	constexpr double NAVAID_RETRY_DELAY_SEC = 10;
 	constexpr double NAVAID_BLACK_LIST_DUR_SEC = 60;
