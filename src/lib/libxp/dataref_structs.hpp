@@ -61,17 +61,16 @@ namespace DRUtil
 		{
 			if (dr.xpdr != nullptr)
 			{
-				*val = XPLMGetDatai(dr.xpdr);
-				return *val;
+				return XPLMGetDatai(dr.xpdr);
 			}
 			return -1;
 		}
 
-		void set()
+		void set(int v)
 		{
 			if (dr.xpdr != nullptr)
 			{
-				XPLMSetDatai(dr.xpdr, *val);
+				XPLMSetDatai(dr.xpdr, v);
 			}
 		}
 
@@ -116,7 +115,7 @@ namespace DRUtil
 						nullptr, nullptr,
 						this, this);
 				dr.xpdr = XPLMFindDataRef(dr.name);
-				set();
+				set(0);
 				dr.regInDRE();
 			}
 			else
@@ -124,6 +123,98 @@ namespace DRUtil
 				//Set variable to dataref's value if dataref already exists
 				dr.xpdr = test_dr;
 				*val = XPLMGetDatai(dr.xpdr);
+			}
+			if (dr.xpdr == nullptr)
+			{
+				return 0;
+			}
+			return 1;
+		}
+
+		void unReg()
+		{
+			if (dr.is_allocated)
+			{
+				delete[] val;
+			}
+			dr.unReg();
+		}
+	};
+
+	struct dref_f
+	{
+		/*
+		Double dataref structure.
+		*/
+		dref dr;
+		float* val;
+
+		float get()
+		{
+			if (dr.xpdr != nullptr)
+			{
+				return XPLMGetDataf(dr.xpdr);
+			}
+			return -1;
+		}
+
+		void set(float v)
+		{
+			if (dr.xpdr != nullptr)
+			{
+				XPLMSetDataf(dr.xpdr, v);
+			}
+		}
+
+		int init()
+		{
+			/*
+			Initializes the dataref inside the sim.
+			Also notifies the dataref editor about the new dataref.
+			If the dataref already exists, just gives a handle to it
+			*/
+
+			if (val == nullptr)
+			{
+				dr.is_allocated = true;
+				val = new float;
+				*val = 0;
+			}
+
+			if (val == nullptr)
+			{
+				// If we've failed to allocate memory for the dataref,
+				// return.
+				return 0;
+			}
+
+			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
+			if (test_dr == nullptr)
+			{
+				dr.xpdr = XPLMRegisterDataAccessor(dr.name, xplmType_Float, dr.is_writable,
+						nullptr, nullptr,
+						[](void* ref) -> float {
+							dref_f* ptr = reinterpret_cast<dref_f*>(ref);
+							return *(ptr->val);
+						},
+						[](void* ref, float newVal) {
+							dref_f* ptr = reinterpret_cast<dref_f*>(ref);
+							*(ptr->val) = newVal;
+						},
+						nullptr, nullptr,
+						nullptr, nullptr,
+						nullptr, nullptr,
+						nullptr, nullptr,
+						this, this);
+				dr.xpdr = XPLMFindDataRef(dr.name);
+				set(0);
+				dr.regInDRE();
+			}
+			else
+			{
+				//Set variable to dataref's value if dataref already exists
+				dr.xpdr = test_dr;
+				*val = XPLMGetDataf(dr.xpdr);
 			}
 			if (dr.xpdr == nullptr)
 			{
@@ -160,11 +251,11 @@ namespace DRUtil
 			return -1;
 		}
 
-		void set()
+		void set(double v)
 		{
 			if (dr.xpdr != nullptr)
 			{
-				XPLMSetDatad(dr.xpdr, *val);
+				XPLMSetDatad(dr.xpdr, v);
 			}
 		}
 
@@ -209,7 +300,7 @@ namespace DRUtil
 						nullptr, nullptr,
 						this, this);
 				dr.xpdr = XPLMFindDataRef(dr.name);
-				set();
+				set(0);
 				dr.regInDRE();
 			}
 			else
@@ -371,7 +462,7 @@ namespace DRUtil
 	struct dref_fa
 	{
 		/*
-		Float array dataref structure.
+			Float array dataref structure.
 		*/
 		dref dr;
 		float* array;
@@ -404,9 +495,9 @@ namespace DRUtil
 		int init()
 		{
 			/*
-			Initializes the dataref inside the sim.
-			Also notifies the dataref editor about the new dataref.
-			If the dataref already exists, just gives a handle to it
+				Initializes the dataref inside the sim.
+				Also notifies the dataref editor about the new dataref.
+				If the dataref already exists, just gives a handle to it
 			*/
 
 			if (array == nullptr)
