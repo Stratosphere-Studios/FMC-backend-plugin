@@ -8,6 +8,8 @@ add_subdirectory(fmc)
 
 add_xplane_plugin(stratosphere_fms_plugin 400 777_FMS.cpp)
 
+target_include_directories(stratosphere_fms_plugin PUBLIC "lib/3rd-party/xplane_sdk/sdk/CHeaders/XPLM")
+
 target_link_libraries(stratosphere_fms_plugin PUBLIC fms_sys)
 
 SET_PROPERTY(TARGET stratosphere_fms_plugin PROPERTY CXX_STANDARD 20)
