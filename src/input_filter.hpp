@@ -3,6 +3,7 @@
 #include "lib/libxp/dataref_structs.hpp"
 #include <XPLMUtilities.h>
 #include <XPLMProcessing.h>
+#include <cmath>
 
 
 namespace StratosphereAvionics
