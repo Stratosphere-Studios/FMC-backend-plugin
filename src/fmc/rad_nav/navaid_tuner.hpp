@@ -15,8 +15,6 @@
 #include "radio.hpp"
 #include "timer.hpp"
 #include <cstring>
-#include <atomic>
-#include <thread>
 
 
 namespace StratosphereAvionics

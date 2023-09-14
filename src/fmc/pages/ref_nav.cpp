@@ -24,7 +24,6 @@ namespace StratosphereAvionics
 									 libnav::airport_data arpt_found, libnav::runway_entry rwy_found,
 									 std::vector<libnav::waypoint_entry> wpts_found)
 	{
-		xp_databus->set_data_s(out_drs.ref_nav.poi_id, " ", -1);
 		xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
 
 		double poi_lat, poi_lon;
@@ -246,8 +245,8 @@ namespace StratosphereAvionics
 		xp_databus->set_datad(out_drs.ref_nav.poi_lon, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_elevation, -1);
 		xp_databus->set_datad(out_drs.ref_nav.poi_freq, -1);
-		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, "\0", -1);
-		xp_databus->set_data_s(out_drs.ref_nav.poi_id, "\0", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, " ", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_id, " ", -1);
 		xp_databus->set_datai(out_drs.ref_nav.poi_length_ft, 0);
 		xp_databus->set_datai(out_drs.ref_nav.poi_length_m, 0);
 	}

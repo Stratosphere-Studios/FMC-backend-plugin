@@ -18,11 +18,11 @@
 #include <mutex>
 
 
-constexpr size_t CHAR_BUF_SIZE = 2048;
-
-
 namespace XPDataBus
 {
+	constexpr char DEFAULT_STR_FILL_CHAR = ' ';
+	constexpr size_t CHAR_BUF_SIZE = 2048;
+
 	struct geo_point
 	{
 		double lat, lon;

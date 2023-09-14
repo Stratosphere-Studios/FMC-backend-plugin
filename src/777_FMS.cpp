@@ -1,3 +1,4 @@
+#include "input_filter.hpp"
 #include "777_dr_init.hpp"
 #include "777_dr_decl.hpp"
 #include <thread>
@@ -16,6 +17,7 @@ fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs,
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
 
+std::shared_ptr<StratosphereAvionics::InputFiltering::InputFilter> input_filter;
 std::shared_ptr<XPDataBus::DataBus> sim_databus;
 std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
@@ -29,6 +31,8 @@ int data_refs_created = 0;
 
 float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon)
 {
+	float dead_zone = StratosphereAvionics::InputFiltering::DEAD_ZONE_DEFAULT;
+	input_filter = std::make_shared<StratosphereAvionics::InputFiltering::InputFilter>(dead_zone, dead_zone, dead_zone);
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, av_out, 
 																   POI_CACHE_TILE_SIZE_DEG, N_FMC_REFRESH_HZ);
