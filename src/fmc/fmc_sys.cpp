@@ -129,7 +129,7 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), "\0", -1);
+				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), " ", -1);
 			}
 			navaid_inhibit[idx] = id;
 		}
@@ -150,7 +150,7 @@ namespace StratosphereAvionics
 			}
 			else
 			{
-				xp_databus->set_data_s(out_drs.excl_vors.at(idx), "\0", -1);
+				xp_databus->set_data_s(out_drs.excl_vors.at(idx), " ", -1);
 			}
 			vor_inhibit[idx] = id;
 		}
