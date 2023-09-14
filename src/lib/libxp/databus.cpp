@@ -408,10 +408,7 @@ namespace XPDataBus
 			char* data = reinterpret_cast<char*>(ptr.ptr);
 			size_t data_length = ptr.n_length - in->offset;
 			size_t str_length = in->str.length();
-			if (str_length < data_length)
-			{
-				data_length = str_length;
-			}
+
 			if (str_length <= 1 && in->offset == -1) // Set all elements of output string to 1 character
 			{
 				char c = 0;
@@ -428,7 +425,14 @@ namespace XPDataBus
 			{
 				for (int i = 0; i < data_length; i++)
 				{
-					data[i + in->offset] = in->str.at(i);
+					if (i < str_length)
+					{
+						data[i + in->offset] = in->str.at(i);
+					}
+					else
+					{
+						data[i + in->offset] = DEFAULT_STR_FILL_CHAR;
+					}
 				}
 			}
 		}

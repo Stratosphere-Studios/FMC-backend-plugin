@@ -21,6 +21,9 @@ enum dr_access
 
 namespace DRUtil
 {
+	constexpr char DEFAULT_STR_FILL_CHAR = ' ';
+
+
 	float regDRInDRE(float elapsedMe, float elapsedSim, int counter, void* ref);
 
 	struct dref
@@ -618,7 +621,7 @@ namespace DRUtil
 				str = new char[n_length];
 				for (int i = 0; i < n_length; i++)
 				{
-					str[i] = 0;
+					str[i] = DEFAULT_STR_FILL_CHAR;
 				}
 			}
 
