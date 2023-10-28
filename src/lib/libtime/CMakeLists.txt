@@ -5,7 +5,7 @@ add_library(libtime STATIC ${LIBTIME_SRC} ${LIBTIME_HDR})
 target_include_directories(libtime INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32)
-	TARGET_COMPILE_OPTIONS(libtime PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+	TARGET_COMPILE_OPTIONS(libtime PRIVATE "/MT$<$<CONFIG:Release>:d>")
 endif(WIN32)
 
 if(UNIX AND NOT APPLE)

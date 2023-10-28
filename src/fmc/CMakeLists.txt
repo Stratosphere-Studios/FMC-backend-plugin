@@ -7,7 +7,7 @@ add_library(fms_sys STATIC ${FMC_SYS_SRC} ${FMC_SYS_HDR})
 target_include_directories(fms_sys INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32)
-	TARGET_COMPILE_OPTIONS(fms_sys PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+	TARGET_COMPILE_OPTIONS(fms_sys PRIVATE "/MT$<$<CONFIG:Release>:d>")
 endif(WIN32)
 
 add_xplane_sdk_definitions(fms_sys 400)
