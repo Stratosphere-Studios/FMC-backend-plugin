@@ -10,242 +10,9 @@
 
 #include "fmc_sys.hpp"
 
-#include "pages/ref_nav.cpp"
-#include "pages/rte1.cpp"
-#include "pages/sel_desired_wpt.cpp"
-
 
 namespace StratosphereAvionics
 {
-	// AvionicsSys definitions
-
-	// Public member functions:
-
-	AvionicsSys::AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, 
-							 double cache_tile_size, int hz)
-	{
-		n_refresh_hz = hz;
-		tile_size = cache_tile_size;
-		ac_pos_last = {};
-
-		in_drs = in;
-		out_drs = out;
-
-		xp_databus = databus;
-		strcpy_safe(path_sep, 2, xp_databus->path_sep); // Update path separator
-		xplane_path = xp_databus->xplane_path;
-		prefs_path = xp_databus->prefs_path;
-		xplane_version = xp_databus->xplane_version;
-
-		sim_apt_path = xp_databus->apt_dat_path;
-		std::string tgt_apt_path = prefs_path + "Strato_777_apt.dat";
-		std::string tgt_rnw_path = prefs_path + "Strato_777_rnw.dat";
-
-		std::string fix_path = xp_databus->default_data_path + "earth_fix.dat";
-		std::string navaid_path = xp_databus->default_data_path + "earth_nav.dat";
-
-		airports = {};
-		runways = {};
-
-		clock = new libtime::Timer();
-
-		// Initialize data bases
-
-		apt_db = new libnav::ArptDB(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
-		navaid_db = new libnav::NavaidDB(fix_path, navaid_path, &waypoints);
-		nav_db = new libnav::NavDB(apt_db, navaid_db);
-
-		dr_cache = new XPDataBus::DataRefCache();
-
-		navaid_tuner = new NavaidTuner(databus, in_drs.nav_tuner, out_drs.nav_tuner, rad_nav_cand_update_time_sec);
-		navaid_selector = new NavaidSelector(databus, navaid_tuner, out_drs.nav_selector, cache_tile_size,
-										     min_navaid_dist_nm, rad_nav_cand_update_time_sec);
-	}
-
-	geo::point3d AvionicsSys::get_ac_pos()
-	{
-		std::lock_guard<std::mutex> lock(ac_pos_mutex);
-
-		return ac_pos;
-	}
-
-	std::string AvionicsSys::get_fpln_dep_icao()
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		return pln.dep_apt.icao;
-	}
-
-	void AvionicsSys::set_fpln_dep_apt(libnav::airport apt)
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		pln.dep_apt = apt;
-		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
-	}
-
-	libnav::airport AvionicsSys::get_fpln_arr_apt()
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		return pln.arr_apt;
-	}
-
-	std::string AvionicsSys::get_fpln_arr_icao()
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		return pln.arr_apt.icao;
-	}
-
-	void AvionicsSys::set_fpln_arr_apt(libnav::airport apt)
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		pln.arr_apt = apt;
-		xp_databus->set_data_s(out_drs.arr_icao, apt.icao);
-	}
-
-	void AvionicsSys::set_fpln_dep_rnw(libnav::runway rnw)
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		pln.dep_rnw = rnw;
-		xp_databus->set_data_s(out_drs.dep_rnw, "RW"+rnw.id);
-	}
-
-	void AvionicsSys::set_fpln_arr_rnw(libnav::runway rnw)
-	{
-		std::lock_guard<std::mutex> lock(fpln_mutex);
-		pln.arr_rnw = rnw;
-	}
-
-	void AvionicsSys::excl_navaid(std::string id, int idx)
-	{
-		std::lock_guard<std::mutex> lock(navaid_inhibit_mutex);
-		if (idx >= 0 && idx < navaid_inhibit.size())
-		{
-			rm_from_bl(navaid_inhibit[idx]); // Remove all previously blacklisted navaids
-
-			if (id != "")
-			{
-				add_to_bl(id);
-
-				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), id);
-			}
-			else
-			{
-				xp_databus->set_data_s(out_drs.excl_navaids.at(idx), " ", -1);
-			}
-			navaid_inhibit[idx] = id;
-		}
-	}
-
-	void AvionicsSys::excl_vor(std::string id, int idx)
-	{
-		std::lock_guard<std::mutex> lock(vor_inhibit_mutex);
-		if (idx >= 0 && idx < vor_inhibit.size())
-		{
-			rm_from_bl(vor_inhibit[idx]); // Remove all previously blacklisted navaids
-			
-			if (id != "")
-			{
-				add_to_bl(id);
-
-				xp_databus->set_data_s(out_drs.excl_vors.at(idx), id);
-			}
-			else
-			{
-				xp_databus->set_data_s(out_drs.excl_vors.at(idx), " ", -1);
-			}
-			vor_inhibit[idx] = id;
-		}
-	}
-
-	void AvionicsSys::update_sys()
-	{
-		update_ac_pos();
-
-		navaid_tuner->set_ac_pos(ac_pos);
-
-		navaid_selector->update(&waypoints, ac_pos, clock->get_curr_time());
-	}
-
-	void AvionicsSys::main_loop()
-	{
-		update_load_status();
-		while (!sim_shutdown.load(std::memory_order_relaxed))
-		{
-			update_sys();
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
-		}
-	}
-
-	AvionicsSys::~AvionicsSys()
-	{
-		delete[] navaid_selector;
-		delete[] navaid_tuner;
-		delete[] nav_db;
-		delete[] apt_db;
-		delete[] navaid_db;
-		delete[] dr_cache;
-		delete[] clock;
-	}
-
-	// Private member functions:
-
-	void AvionicsSys::update_load_status()
-	{
-		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 1);
-		if (!sim_shutdown.load(UPDATE_FLG_ORDR))
-		{
-			bool sts = nav_db->is_loaded();
-			if (!sts)
-			{
-				xp_databus->set_datai("Strato/777/UI/messages/creating_databases", -1);
-				return;
-			}
-		}
-		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 0);
-	}
-
-	void AvionicsSys::update_ac_pos()
-	{
-		double baro_ft_1 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
-		double baro_ft_2 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
-		double baro_ft_3 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
-		std::lock_guard<std::mutex> lock(ac_pos_mutex);
-		ac_pos.p.lat_deg = xp_databus->get_datad(in_drs.sim_ac_lat_deg);
-		ac_pos.p.lon_deg = xp_databus->get_datad(in_drs.sim_ac_lon_deg);
-		ac_pos.alt_ft = (baro_ft_1 + baro_ft_2 + baro_ft_3) / 3;
-	}
-
-	/*
-		Blacklists all navaids with given id forever.
-	*/
-
-	void AvionicsSys::add_to_bl(std::string id)
-	{
-		std::vector<libnav::waypoint_entry> entries;
-		nav_db->get_wpt_data(id, &entries);
-
-		for (int i = 0; i < entries.size(); i++)
-		{
-			navaid_tuner->black_list->add_to_black_list(&id, &entries.at(i));
-		}
-	}
-
-	/*
-		Removes all navaids with given id from black list.
-	*/
-
-	void AvionicsSys::rm_from_bl(std::string id)
-	{
-		std::vector<libnav::waypoint_entry> entries;
-		nav_db->get_wpt_data(id, &entries);
-
-		for (int i = 0; i < entries.size(); i++)
-		{
-			libnav::waypoint tmp = { id, entries.at(i) };
-			navaid_tuner->black_list->remove_from_black_list(&id, &entries.at(i));
-		}
-	}
-
 	// FMC definitions:
 
 	// Public member functions:
@@ -272,11 +39,447 @@ namespace StratosphereAvionics
 		return { ac_lat, ac_lon };
 	}
 
+	// SEL DES WPT page:
+
+	libnav::waypoint_entry FMC::update_sel_des_wpt(std::string id,
+		std::vector<libnav::waypoint_entry> vec) // Updates SELECT DESIRED WPT page for navaids
+	{
+		int n_subpages = int(ceil(float(vec.size()) / float(N_CDU_OUT_LINES)));
+
+		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 1);
+		xp_databus->set_datai(out_drs.sel_desired_wpt.n_subpages, n_subpages);
+
+		geo::point ac_pos = get_ac_pos(); // Current aircraft position
+
+		libnav::sort_wpt_entry_by_dist(&vec, ac_pos);
+
+		int curr_subpage = 1;
+		int subpage_prev = 0;
+		int n_navaids_displayed = N_CDU_OUT_LINES;
+
+		int start_idx = 0;
+
+		int user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
+
+		libnav::waypoint_entry out_navaid{};
+
+		while ((user_idx < 0 || user_idx >= n_navaids_displayed) && !sim_shutdown.load(std::memory_order_relaxed))
+		{
+			// If user decides to leave this page, reset and exit
+			if (!xp_databus->get_datai(out_drs.sel_desired_wpt.is_active))
+			{
+				return out_navaid;
+			}
+
+			if (subpage_prev != curr_subpage)
+			{
+				// Wait until user has selected a valid waypoint
+				start_idx = (curr_subpage - 1) * N_CDU_OUT_LINES;
+
+				n_navaids_displayed = N_CDU_OUT_LINES;
+				if (int(vec.size()) - start_idx < n_navaids_displayed)
+				{
+					n_navaids_displayed = int(vec.size()) - start_idx;
+				}
+
+				xp_databus->set_datai(out_drs.sel_desired_wpt.n_pois, n_navaids_displayed);
+
+				for (int i = start_idx; i < start_idx + n_navaids_displayed; i++)
+				{
+					double poi_freq = 0;
+					double poi_lat = vec.at(i).pos.lat_deg;
+					double poi_lon = vec.at(i).pos.lon_deg;
+
+					// Make sure the pointer to navaid data isn't null.
+					if (vec.at(i).navaid)
+					{
+						poi_freq = vec.at(i).navaid->freq;
+					}
+
+					std::string type_str = id + " " + libnav::navaid_to_str(vec.at(i).type);
+
+					xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i - start_idx), type_str, i - start_idx);
+					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_freq), (i - start_idx) * 3);
+					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lat), (i - start_idx) * 3 + 1);
+					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lon), (i - start_idx) * 3 + 2);
+				}
+				subpage_prev = curr_subpage;
+			}
+
+			curr_subpage = libnav::clamp(xp_databus->get_datai(in_drs.sel_desired_wpt.curr_page), n_subpages, 1);
+			user_idx = xp_databus->get_datai(in_drs.sel_desired_wpt.poi_idx);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
+		}
+
+		xp_databus->set_datai(out_drs.sel_desired_wpt.is_active, 0);
+		reset_sel_navaid();
+
+		if (user_idx != -1 && curr_subpage <= n_subpages)
+		{
+			return vec.at(user_idx + start_idx);
+		}
+
+		return out_navaid;
+	}
+
+	void FMC::reset_sel_navaid()
+	{
+		for (int i = 0; i < N_CDU_OUT_LINES; i++)
+		{
+			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3);
+			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3 + 1);
+			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3 + 2);
+			xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i), " ", -1);
+		}
+		xp_databus->set_datai(out_drs.sel_desired_wpt.n_subpages, 0);
+		xp_databus->set_datai(in_drs.sel_desired_wpt.curr_page, 1);
+		xp_databus->set_datai(in_drs.sel_desired_wpt.poi_idx, -1);
+	}
+
+	// REF NAV DATA page:
+
+	int FMC::update_ref_nav_poi_data(int n_arpt_found, int n_rwys_found, int n_wpts_found, std::string icao,
+		libnav::airport_data arpt_found, libnav::runway_entry rwy_found,
+		std::vector<libnav::waypoint_entry> wpts_found)
+	{
+		xp_databus->set_data_s(out_drs.ref_nav.poi_id, icao);
+
+		double poi_lat, poi_lon;
+
+		if (n_arpt_found)
+		{
+			xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_AIRPORT);
+			poi_lat = arpt_found.pos.lat_deg;
+			poi_lon = arpt_found.pos.lon_deg;
+
+			xp_databus->set_datai(out_drs.ref_nav.poi_elevation, arpt_found.elevation_ft);
+		}
+		else if (n_rwys_found)
+		{
+			double rwy_length_m = rwy_found.get_impl_length_m() - rwy_found.displ_threshold_m;
+			double rwy_length_ft = rwy_length_m * M_TO_FT;
+			xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_RWY);
+			xp_databus->set_datai(out_drs.ref_nav.poi_length_m, int(rwy_length_m));
+			xp_databus->set_datai(out_drs.ref_nav.poi_length_ft, int(rwy_length_ft));
+			xp_databus->set_datai(out_drs.ref_nav.poi_elevation, arpt_found.elevation_ft);
+			poi_lat = rwy_found.start.lat_deg;
+			poi_lon = rwy_found.start.lon_deg;
+		}
+		else
+		{
+			libnav::waypoint_entry curr_wpt = wpts_found.at(0);
+
+			if (n_wpts_found > 1)
+			{
+				curr_wpt = update_sel_des_wpt(icao, wpts_found);
+
+				if (curr_wpt.type == NAV_NONE) // If shutdown commenced, return.
+				{
+					return 0;
+				}
+			}
+
+			if (curr_wpt.type == NAV_WAYPOINT)
+			{
+				xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_WAYPOINT);
+			}
+			else
+			{
+				xp_databus->set_datai(out_drs.ref_nav.poi_type, POI_NAVAID);
+				xp_databus->set_datad(out_drs.ref_nav.poi_freq, curr_wpt.navaid->freq);
+			}
+
+			poi_lat = curr_wpt.pos.lat_deg;
+			poi_lon = curr_wpt.pos.lon_deg;
+		}
+
+		double mag_var = xp_databus->get_mag_var(poi_lat, poi_lon);
+		std::string mag_var_str = strutils::mag_var_to_str(mag_var);
+
+		xp_databus->set_datad(out_drs.ref_nav.poi_lat, poi_lat);
+		xp_databus->set_datad(out_drs.ref_nav.poi_lon, poi_lon);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, mag_var_str);
+
+		return 1;
+	}
+
+	void FMC::update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
+		ref_nav threshold, bool add_vor)
+	{
+		for (int i = 0; i < int(nav_drs->size()); i++)
+		{
+			std::string curr_dr_name = nav_drs->at(i);
+			std::string tmp = xp_databus->get_data_s(curr_dr_name);
+			std::string entry_curr;
+			std::string entry_last = dr_cache->get_val_s(curr_dr_name);
+
+			strip_str(&tmp, &entry_curr);
+
+			if (entry_curr != entry_last)
+			{
+				dr_cache->set_val_s(curr_dr_name, entry_curr);
+
+				if (entry_curr != "")
+				{
+					if (xp_databus->get_datai(in_drs.ref_nav.rad_nav_inh) > static_cast<int>(threshold))
+					{
+						if (nav_db->is_navaid_of_type(entry_curr, types))
+						{
+							if (add_vor)
+							{
+								avionics->excl_vor(entry_curr, i);
+							}
+							else
+							{
+								avionics->excl_navaid(entry_curr, i);
+							}
+						}
+						else
+						{
+							int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+							xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
+						}
+					}
+				}
+				else
+				{
+					if (add_vor)
+					{
+						avionics->excl_vor(entry_curr, i);
+					}
+					else
+					{
+						avionics->excl_navaid(entry_curr, i);
+					}
+				}
+			}
+		}
+	}
+
+	void FMC::reset_ref_nav_poi_data(std::vector<std::string>* nav_drs)
+	{
+		for (int i = 0; i < int(nav_drs->size()); i++)
+		{
+			std::string curr_dr = nav_drs->at(i);
+			xp_databus->set_data_s(curr_dr, " ", -1);
+		}
+	}
+
+	int FMC::update_ref_nav(const std::string icao)
+	{
+		std::string tmp = icao;
+
+		libnav::airport_data arpt_found{};
+		libnav::runway_entry rwy_found{};
+		std::vector<libnav::waypoint_entry> wpts_found{};
+
+		int n_arpts_found = 0, n_wpts_found = 0, n_rwys_found = 0;
+
+		if (std::isdigit(icao[0]))
+		{
+			arpt_found = avionics->get_fpln_arr_apt().data;
+			n_rwys_found = get_arrival_rwy_data(icao, &rwy_found);
+			tmp = "RW" + tmp;
+		}
+		else if (icao.length() == 5 && icao[0] == 'R' && icao[1] == 'W' && std::isdigit(icao[2]))
+		{
+			arpt_found = avionics->get_fpln_arr_apt().data;
+			n_rwys_found = get_arrival_rwy_data(icao.substr(2, icao.length() - 1), &rwy_found);
+		}
+		else
+		{
+			n_arpts_found = nav_db->get_airport_data(icao, &arpt_found);
+			n_wpts_found = nav_db->get_wpt_data(icao, &wpts_found);
+		}
+
+		if (n_arpts_found + n_wpts_found + n_rwys_found)
+		{
+			int ret = update_ref_nav_poi_data(n_arpts_found, n_rwys_found, n_wpts_found,
+				tmp, arpt_found, rwy_found, wpts_found);
+			if (!ret)
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			// Trigger NOT IN DATA BASE scratch pad message
+			int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+			xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
+		}
+		return 1;
+	}
+
+	void FMC::ref_nav_main_loop() // Updates ref nav data page
+	{
+		while (xp_databus->get_datai(in_drs.curr_page) == static_cast<int>(fmc_pages::PAGE_REF_NAV_DATA) &&
+			!sim_shutdown.load(std::memory_order_relaxed))
+		{
+			std::string tmp = xp_databus->get_data_s(in_drs.ref_nav.poi_id);
+			std::string icao;
+			std::string icao_entry_last = dr_cache->get_val_s(in_drs.ref_nav.poi_id);
+
+			strip_str(&tmp, &icao);
+
+			if (icao != icao_entry_last)
+			{
+				dr_cache->set_val_s(in_drs.ref_nav.poi_id, icao);
+
+				if (icao != "")
+				{
+					// Reset poi id so that the it isn't corrupted
+					xp_databus->set_data_s(in_drs.ref_nav.poi_id, " ", -1);
+
+					int ret = update_ref_nav(icao);
+
+					if (!ret) return; // If shutdown has commenced, exit.
+				}
+			}
+
+			update_ref_nav_inhibit(&in_drs.ref_nav.in_navaids, { NAV_DME, NAV_DME_ONLY, 
+				NAV_VOR, NAV_VOR_DME }, ref_nav::RAD_NAV_INHIBIT, false);
+			update_ref_nav_inhibit(&in_drs.ref_nav.in_vors, { NAV_VOR, NAV_VOR_DME }, 
+				ref_nav::RAD_NAV_VOR_ONLY_INHIBIT, true);
+
+			int inh_curr = xp_databus->get_datai(in_drs.ref_nav.rad_nav_inh);
+			int inh_last = dr_cache->get_val_i(in_drs.ref_nav.rad_nav_inh);
+
+			if (inh_curr != inh_last)
+			{
+				dr_cache->set_val_i(in_drs.ref_nav.rad_nav_inh, inh_curr);
+				reset_ref_nav_poi_data(&in_drs.ref_nav.in_navaids);
+				reset_ref_nav_poi_data(&in_drs.ref_nav.in_vors);
+			}
+
+			update_scratch_msg();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
+		}
+		reset_ref_nav();
+	}
+
+	void FMC::reset_ref_nav()
+	{
+		xp_databus->set_datai(out_drs.ref_nav.poi_type, 0);
+		xp_databus->set_datad(out_drs.ref_nav.poi_lat, -1);
+		xp_databus->set_datad(out_drs.ref_nav.poi_lon, -1);
+		xp_databus->set_datad(out_drs.ref_nav.poi_elevation, -1);
+		xp_databus->set_datad(out_drs.ref_nav.poi_freq, -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_mag_var, " ", -1);
+		xp_databus->set_data_s(out_drs.ref_nav.poi_id, " ", -1);
+		xp_databus->set_datai(out_drs.ref_nav.poi_length_ft, 0);
+		xp_databus->set_datai(out_drs.ref_nav.poi_length_m, 0);
+	}
+
+	// RTE1 page:
+
+	/*
+			Updates airport icao codes on any rte page.
+			If user has entered a valid icao, returns true.
+			Otherwise, returns false.
+	*/
+
+	bool FMC::update_rte_apt(std::string in_dr, libnav::airport_data* apt_data, libnav::runway_data* rnw_data)
+	{
+		std::string tmp = xp_databus->get_data_s(in_dr);
+		std::string icao_curr;
+		std::string icao_last = dr_cache->get_val_s(in_dr);
+
+		strip_str(&tmp, &icao_curr);
+
+		if (icao_curr != icao_last)
+		{
+			dr_cache->set_val_s(in_dr, icao_curr);
+
+			int n_arpts = nav_db->get_airport_data(icao_curr, apt_data);
+
+			if (n_arpts)
+			{
+				nav_db->get_apt_rwys(icao_curr, rnw_data);
+
+				return true;
+			}
+			else
+			{
+				int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+				xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
+			}
+		}
+
+		return false;
+	}
+
+	void FMC::update_rte1()
+	{
+		libnav::airport_data dep_data;
+		libnav::runway_data dep_runways;
+		libnav::airport_data arr_data;
+		libnav::runway_data arr_runways;
+
+		bool dep_rnw_updated = false;
+
+		while (xp_databus->get_datai(in_drs.curr_page) == static_cast<int>(fmc_pages::PAGE_RTE1) &&
+			!sim_shutdown.load(std::memory_order_relaxed))
+		{
+			bool ret1 = update_rte_apt(in_drs.rte1.dep_icao, &dep_data, &dep_runways);
+			bool ret2 = update_rte_apt(in_drs.rte1.arr_icao, &arr_data, &arr_runways);
+
+			if (ret1)
+			{
+				std::string dep_icao = xp_databus->get_data_s(in_drs.rte1.dep_icao);
+				avionics->set_fpln_dep_apt({ dep_icao,  dep_data });
+			}
+			else if (!dep_rnw_updated)
+			{
+				dep_rnw_updated = true;
+				std::string dep_icao = xp_databus->get_data_s(in_drs.rte1.dep_icao);
+				nav_db->get_apt_rwys(dep_icao, &dep_runways);
+			}
+			if (ret2)
+			{
+				std::string arr_icao = xp_databus->get_data_s(in_drs.rte1.arr_icao);
+				avionics->set_fpln_arr_apt({ arr_icao,  arr_data });
+			}
+
+			std::string tmp = xp_databus->get_data_s(in_drs.rte1.dep_rnw);
+			std::string rnw_curr;
+			std::string rnw_last = dr_cache->get_val_s(in_drs.rte1.dep_rnw);
+
+			strip_str(&tmp, &rnw_curr);
+
+			if (rnw_curr != rnw_last)
+			{
+				dr_cache->set_val_s(in_drs.rte1.dep_rnw, rnw_curr);
+				xp_databus->set_data_s(in_drs.rte1.dep_rnw, " ", -1);
+				if (dep_runways.find(rnw_curr) != dep_runways.end())
+				{
+					avionics->set_fpln_dep_rnw({ rnw_curr, dep_runways.at(rnw_curr) });
+				}
+				else
+				{
+					int msg_idx = out_drs.scratch_msg.not_in_db_idx;
+					xp_databus->set_datai(out_drs.scratch_msg.dr_list[msg_idx], 1);
+				}
+			}
+
+			update_scratch_msg();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / n_refresh_hz));
+		}
+	}
+
+	// MISC:
+
+	/*
+		This function clears all of the scratch pad messages when the clear dataref has been set to 1.
+	*/
+
 	void FMC::update_scratch_msg()
 	{
 		if (xp_databus->get_datai(in_drs.scratch_pad_msg_clear))
 		{
-			for (int i = 0; i < out_drs.scratch_msg.dr_list.size(); i++)
+			for (int i = 0; i < int(out_drs.scratch_msg.dr_list.size()); i++)
 			{
 				xp_databus->set_datai(out_drs.scratch_msg.dr_list[i], 0);
 			}
@@ -288,20 +491,30 @@ namespace StratosphereAvionics
 	{
 		while (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
-			int page = xp_databus->get_datai(in_drs.curr_page);
+			fmc_pages page = static_cast<fmc_pages>(xp_databus->get_datai(in_drs.curr_page));
 			switch (page)
 			{
-			case PAGE_REF_NAV_DATA:
+			case fmc_pages::PAGE_REF_NAV_DATA:
 				ref_nav_main_loop();
-			case PAGE_RTE1:
+				continue;
+			case fmc_pages::PAGE_RTE1:
 				update_rte1();
+				continue;
+			default:
+				continue;
 			}
 		}
 	}
 
+	void FMC::disable()
+	{
+		XPLMDebugString("777_FMS: Disabling fmc\n");
+		delete dr_cache;
+	}
+
 	FMC::~FMC()
 	{
-		delete[] dr_cache;
+		
 	}
 
 	// Private member functions:

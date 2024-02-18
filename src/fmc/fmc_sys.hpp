@@ -10,55 +10,34 @@
 
 #pragma once
 
-#include "dr_cache.hpp"
-#include "databus.hpp"
-#include "navaid_selector.hpp"
-#include "nav_db.hpp"
-#include "timer.hpp"
+#include <libxp/dr_cache.hpp>
+#include <libxp/databus.hpp>
+#include <libnav/nav_db.hpp>
+#include <libtime/timer.hpp>
 #include <cstring>
+#include "avionics/avionics.hpp"
+#include "avionics/rad_nav/navaid_selector.hpp"
 
 
-enum fmc_pages
+enum class fmc_pages
 {
-	N_CDU_OUT_LINES = 6,
-
 	PAGE_OTHER = 0,
 	PAGE_RTE1 = 1,
 	PAGE_REF_NAV_DATA = 2
 };
 
-// Minimal distance to navaid for radio navigation.
+enum class ref_nav
+{
+	RAD_NAV_INHIBIT = 0,
+	RAD_NAV_VOR_ONLY_INHIBIT = 1,
+	RAD_NAV_NO_INHIBIT = 2
+};
 
-constexpr double min_navaid_dist_nm = 160; 
-
-// Period in seconds after which the radio navigation 
-// candidates will be re-examined
-
-constexpr int rad_nav_cand_update_time_sec = 5; 
+constexpr int N_CDU_OUT_LINES = 6;
 
 
 namespace StratosphereAvionics
 {
-	struct avionics_in_drs
-	{
-		std::string sim_baro_alt_ft1, sim_baro_alt_ft2, sim_baro_alt_ft3;
-		std::string sim_ac_lat_deg, sim_ac_lon_deg;
-
-		navaid_tuner_in_drs nav_tuner;
-	};
-
-	struct avionics_out_drs
-	{
-		std::string dep_icao, arr_icao;
-		std::string dep_rnw;
-
-		std::vector<std::string> excl_navaids;
-		std::vector<std::string> excl_vors;
-		
-		navaid_tuner_out_drs nav_tuner;
-		navaid_selector_out_drs nav_selector;
-	};
-
 	struct fmc_ref_nav_in_drs
 	{
 		std::string poi_id, rad_nav_inh;
@@ -73,7 +52,7 @@ namespace StratosphereAvionics
 			poi_freq, poi_mag_var, poi_length_ft, poi_length_m;
 	};
 
-	struct fmc_rte1_drs
+	struct fmc_rte_drs
 	{
 		std::string dep_icao, arr_icao, dep_rnw;
 	};
@@ -103,7 +82,7 @@ namespace StratosphereAvionics
 
 		// Custom data refs:
 		fmc_ref_nav_in_drs ref_nav;
-		fmc_rte1_drs rte1;
+		fmc_rte_drs rte1;
 		fmc_sel_desired_wpt_in_drs sel_desired_wpt;
 		std::string scratch_pad_msg_clear, curr_page;
 	};
@@ -119,108 +98,7 @@ namespace StratosphereAvionics
 		// MISC
 		scratchpad_drs scratch_msg;
 	};
-
-
-	struct flightplan
-	{
-		libnav::airport dep_apt, arr_apt;
-		libnav::runway dep_rnw, arr_rnw;
-	};
-
-
-	class AvionicsSys 
-	{
-	public:
-		char path_sep[2];
-		std::string xplane_path;
-		std::string prefs_path;
-		std::string sim_apt_path;
-		std::string default_data_path;
-		int xplane_version;
-		std::atomic<bool> sim_shutdown{ false };
-
-		std::shared_ptr<XPDataBus::DataBus> xp_databus;
-
-		std::unordered_map<std::string, std::vector<libnav::waypoint_entry>> waypoints;
-		std::unordered_map<std::string, libnav::airport_data> airports;
-		std::unordered_map<std::string, libnav::runway_data> runways;
-
-		libnav::ArptDB* apt_db;
-		libnav::NavaidDB* navaid_db;
-		libnav::NavDB* nav_db;
-
-
-		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out, 
-					double cache_tile_size, int hz);
-
-		geo::point3d get_ac_pos();
-
-		void set_fpln_dep_apt(libnav::airport apt);
-
-		std::string get_fpln_dep_icao();
-
-		void set_fpln_arr_apt(libnav::airport apt);
-
-		libnav::airport get_fpln_arr_apt();
-
-		std::string get_fpln_arr_icao();
-
-		void set_fpln_dep_rnw(libnav::runway rnw);
-
-		void set_fpln_arr_rnw(libnav::runway rnw);
-
-		void excl_navaid(std::string id, int idx);
-
-		void excl_vor(std::string id, int idx);
-
-		void update_sys();
-
-		void main_loop();
-
-		~AvionicsSys();
-
-	private:
-		int n_refresh_hz;
-		double tile_size;
-
-		avionics_in_drs in_drs;
-		avionics_out_drs out_drs;
-
-		std::mutex fpln_mutex;
-		std::mutex navaid_inhibit_mutex;
-		std::mutex vor_inhibit_mutex;
-		std::mutex ac_pos_mutex;
-
-		flightplan pln;
-
-		std::vector<std::string> navaid_inhibit = { "", "" };
-		std::vector<std::string> vor_inhibit = { "", "" };
-		
-		geo::point3d ac_pos;
-		geo::point3d ac_pos_last;
-
-		libtime::Timer* clock;
-
-		XPDataBus::DataRefCache* dr_cache;
-		NavaidTuner* navaid_tuner;
-		NavaidSelector* navaid_selector;
-
-		void update_load_status();
-
-		void update_ac_pos();
-
-		/*
-			Blacklists all navaids with given id forever.
-		*/
-
-		void add_to_bl(std::string id);
-
-		/*
-			Removes all navaids with given id from black list.
-		*/
-
-		void rm_from_bl(std::string id);
-	};
+	
 
 	class FMC
 	{
@@ -243,7 +121,7 @@ namespace StratosphereAvionics
 		void reset_ref_nav_poi_data(std::vector<std::string>* nav_drs);
 
 		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
-									int threshold, bool add_vor);
+									ref_nav threshold, bool add_vor);
 
 		int update_ref_nav(const std::string icao); // Updates REF NAV DATA page
 
@@ -257,7 +135,7 @@ namespace StratosphereAvionics
 			Otherwise, returns false.
 		*/
 
-		bool update_rte_apt(std::string in_dr, libnav::airport_data* apt_data, libnav::runway_data* rnw_data); 
+		bool update_rte_apt(std::string in_dr, libnav::airport_data* apt_data, libnav::runway_data* rnw_data);
 
 		void update_rte1();
 
@@ -265,12 +143,14 @@ namespace StratosphereAvionics
 
 		void main_loop();
 
+		void disable();
+
 		~FMC();
 
 	private:
 		int n_refresh_hz;
 
-		libnav::NavDB* nav_db;
+		std::shared_ptr<libnav::NavDB> nav_db;
 		std::shared_ptr<AvionicsSys> avionics;
 		fmc_in_drs in_drs;
 		fmc_out_drs out_drs;
@@ -278,6 +158,7 @@ namespace StratosphereAvionics
 		std::shared_ptr<XPDataBus::DataBus> xp_databus;
 
 		XPDataBus::DataRefCache* dr_cache;
+
 
 		int get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry* out);
 	};
