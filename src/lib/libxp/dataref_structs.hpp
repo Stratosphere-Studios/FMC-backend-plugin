@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include "XPLMProcessing.h"
-#include "XPLMDataAccess.h"
-#include "XPLMPlugin.h"
+#include <XPLMProcessing.h>
+#include <XPLMDataAccess.h>
+#include <XPLMPlugin.h>
+#include <XPLMUtilities.h>
 #include <string>
 
 #define MSG_ADD_DATAREF 0x01000000
@@ -58,7 +59,7 @@ namespace DRUtil
 		Integer dataref structure.
 		*/
 		dref dr;
-		int* val;
+		int val;
 
 		int get()
 		{
@@ -85,19 +86,7 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			if (val == nullptr)
-			{
-				dr.is_allocated = true;
-				val = new int;
-				*val = 0;
-			}
-
-			if (val == nullptr) 
-			{
-				// If we've failed to allocate memory for the dataref,
-				// return.
-				return 0; 
-			}
+			val = 0;
 
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
@@ -105,11 +94,11 @@ namespace DRUtil
 				dr.xpdr = XPLMRegisterDataAccessor(dr.name, xplmType_Int, dr.is_writable,
 						[](void* ref) {
 							dref_i* ptr = reinterpret_cast<dref_i*>(ref);
-							return *(ptr->val);
+							return ptr->val;
 						},
 						[](void* ref, int newVal) {
 							dref_i* ptr = reinterpret_cast<dref_i*>(ref);
-							*(ptr->val) = newVal;
+							ptr->val = newVal;
 						},
 						nullptr, nullptr,
 						nullptr, nullptr,
@@ -125,7 +114,7 @@ namespace DRUtil
 			{
 				//Set variable to dataref's value if dataref already exists
 				dr.xpdr = test_dr;
-				*val = XPLMGetDatai(dr.xpdr);
+				val = XPLMGetDatai(dr.xpdr);
 			}
 			if (dr.xpdr == nullptr)
 			{
@@ -136,10 +125,6 @@ namespace DRUtil
 
 		void unReg()
 		{
-			if (dr.is_allocated)
-			{
-				delete[] val;
-			}
 			dr.unReg();
 		}
 	};
@@ -150,7 +135,7 @@ namespace DRUtil
 		Double dataref structure.
 		*/
 		dref dr;
-		float* val;
+		float val;
 
 		float get()
 		{
@@ -177,19 +162,7 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			if (val == nullptr)
-			{
-				dr.is_allocated = true;
-				val = new float;
-				*val = 0;
-			}
-
-			if (val == nullptr)
-			{
-				// If we've failed to allocate memory for the dataref,
-				// return.
-				return 0;
-			}
+			val = 0;
 
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
@@ -198,11 +171,11 @@ namespace DRUtil
 						nullptr, nullptr,
 						[](void* ref) -> float {
 							dref_f* ptr = reinterpret_cast<dref_f*>(ref);
-							return *(ptr->val);
+							return ptr->val;
 						},
 						[](void* ref, float newVal) {
 							dref_f* ptr = reinterpret_cast<dref_f*>(ref);
-							*(ptr->val) = newVal;
+							ptr->val = newVal;
 						},
 						nullptr, nullptr,
 						nullptr, nullptr,
@@ -217,7 +190,7 @@ namespace DRUtil
 			{
 				//Set variable to dataref's value if dataref already exists
 				dr.xpdr = test_dr;
-				*val = XPLMGetDataf(dr.xpdr);
+				val = XPLMGetDataf(dr.xpdr);
 			}
 			if (dr.xpdr == nullptr)
 			{
@@ -228,10 +201,6 @@ namespace DRUtil
 
 		void unReg()
 		{
-			if (dr.is_allocated)
-			{
-				delete[] val;
-			}
 			dr.unReg();
 		}
 	};
@@ -242,14 +211,14 @@ namespace DRUtil
 		Double dataref structure.
 		*/
 		dref dr;
-		double* val;
+		double val;
 
 		double get()
 		{
 			if (dr.xpdr != nullptr)
 			{
-				*val = XPLMGetDatad(dr.xpdr);
-				return *val;
+				val = XPLMGetDatad(dr.xpdr);
+				return val;
 			}
 			return -1;
 		}
@@ -270,19 +239,7 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			if (val == nullptr)
-			{
-				dr.is_allocated = true;
-				val = new double;
-				*val = 0;
-			}
-
-			if (val == nullptr)
-			{
-				// If we've failed to allocate memory for the dataref,
-				// return.
-				return 0;
-			}
+			val = 0;
 
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
@@ -292,11 +249,11 @@ namespace DRUtil
 						nullptr, nullptr,
 						[](void* ref) -> double {
 							dref_d* ptr = reinterpret_cast<dref_d*>(ref);
-							return *(ptr->val);
+							return ptr->val;
 						},
 						[](void* ref, double newVal) {
 							dref_d* ptr = reinterpret_cast<dref_d*>(ref);
-							*(ptr->val) = newVal;
+							ptr->val = newVal;
 						},
 						nullptr, nullptr,
 						nullptr, nullptr,
@@ -310,7 +267,7 @@ namespace DRUtil
 			{
 				//Set variable to dataref's value if dataref already exists
 				dr.xpdr = test_dr;
-				*val = XPLMGetDatad(dr.xpdr);
+				val = XPLMGetDatad(dr.xpdr);
 			}
 			if (dr.xpdr == nullptr)
 			{
@@ -321,10 +278,6 @@ namespace DRUtil
 
 		void unReg()
 		{
-			if (dr.is_allocated)
-			{
-				delete[] val;
-			}
 			dr.unReg();
 		}
 	};
@@ -343,10 +296,10 @@ namespace DRUtil
 			if (dr.xpdr != nullptr)
 			{
 				int n_dr_length = XPLMGetDatavi(dr.xpdr, nullptr, 0, 0);
-				int retval, junk;
+				int retval;
 				if (pos < n_dr_length)
 				{
-					junk = XPLMGetDatavi(dr.xpdr, &retval, pos, 1);
+					XPLMGetDatavi(dr.xpdr, &retval, pos, 1);
 					return retval;
 				}
 			}
@@ -442,7 +395,7 @@ namespace DRUtil
 				{
 					n_val_get = n_dr_length;
 				}
-				int ret = XPLMGetDatavi(dr.xpdr, array, 0, n_val_get);
+				XPLMGetDatavi(dr.xpdr, array, 0, n_val_get);
 			}
 			if (dr.xpdr == nullptr)
 			{
@@ -454,11 +407,12 @@ namespace DRUtil
 
 		void unReg()
 		{
+			dr.unReg();
 			if (dr.is_allocated)
 			{
 				delete[] array;
+				array = nullptr;
 			}
-			dr.unReg();
 		}
 	};
 
@@ -476,11 +430,10 @@ namespace DRUtil
 			if (dr.xpdr != nullptr)
 			{
 				int n_dr_length = XPLMGetDatavf(dr.xpdr, nullptr, 0, 0);
-				int junk;
 				float retval;
 				if (pos < n_dr_length)
 				{
-					junk = XPLMGetDatavf(dr.xpdr, &retval, pos, 1);
+					XPLMGetDatavf(dr.xpdr, &retval, pos, 1);
 					return retval;
 				}
 			}
@@ -576,7 +529,7 @@ namespace DRUtil
 				{
 					n_val_get = n_dr_length;
 				}
-				int ret = XPLMGetDatavf(dr.xpdr, array, 0, n_val_get);
+				XPLMGetDatavf(dr.xpdr, array, 0, n_val_get);
 			}
 			
 			if (dr.xpdr == nullptr)
@@ -589,11 +542,12 @@ namespace DRUtil
 
 		void unReg()
 		{
+			dr.unReg();
 			if (dr.is_allocated)
 			{
 				delete[] array;
+				array = nullptr;
 			}
-			dr.unReg();
 		}
 	};
 
@@ -697,11 +651,12 @@ namespace DRUtil
 
 		void unReg()
 		{
+			dr.unReg();
 			if (dr.is_allocated)
 			{
 				delete[] str;
+				str = nullptr;
 			}
-			dr.unReg();
 		}
 	};
 
@@ -711,6 +666,11 @@ namespace DRUtil
 		* Do NOT use this function in any of your own code. This function is intended
 		* to be used only within this library.
 		*/
+
+		(void)elapsedMe;
+		(void)elapsedSim;
+		(void)counter;
+
 		XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
 		if (PluginID != XPLM_NO_PLUGIN_ID)
 		{

@@ -21,7 +21,8 @@
 namespace XPDataBus
 {
 	constexpr char DEFAULT_STR_FILL_CHAR = ' ';
-	constexpr size_t CHAR_BUF_SIZE = 2048;
+	constexpr int CHAR_BUF_SIZE = 2048;
+	constexpr std::memory_order ATOMIC_ORDR = std::memory_order_seq_cst;
 
 	struct geo_point
 	{
@@ -63,6 +64,7 @@ namespace XPDataBus
 	class DataBus
 	{
 	public:
+		std::atomic<bool> is_operative;
 		std::queue<mag_var_req> mag_var_queue;
 		std::mutex mag_var_queue_mutex;
 		std::queue<get_req> get_queue;
@@ -117,6 +119,8 @@ namespace XPDataBus
 		XPLMFlightLoopID reg_flt_loop();
 
 		void cleanup();
+
+		void disable();
 
 		~DataBus();
 		

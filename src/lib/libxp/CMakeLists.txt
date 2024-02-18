@@ -5,9 +5,9 @@ add_library(libxp STATIC ${LIBXP_SRC} ${LIBXP_HDR})
 target_include_directories(libxp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32)
-	TARGET_COMPILE_OPTIONS(libxp PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+	TARGET_COMPILE_OPTIONS(libxp PRIVATE "/MT$<$<CONFIG:Release>:d>")
 endif(WIN32)
-
+#target_compile_options(libxp PUBLIC -Wall -Wextra -Werror -g)
 add_xplane_sdk_definitions(libxp 400)
 
 if(UNIX AND NOT APPLE)

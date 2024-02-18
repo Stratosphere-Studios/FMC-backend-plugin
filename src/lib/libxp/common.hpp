@@ -41,7 +41,7 @@ inline void strcpy_adv(char* dst, size_t length, std::string* src)
 
 inline void strip_str(std::string* src, std::string* dst)
 {
-	int i = 0;
+	size_t i = 0;
 	while (i < src->length() && src->at(i) && src->at(i) != ' ')
 	{
 		dst->push_back(src->at(i));
@@ -55,7 +55,7 @@ namespace XPDataBus
 	{
 		void* ptr;
 		int ptr_type;
-		size_t n_length;
+		int n_length;
 	};
 
 	struct generic_val

@@ -22,7 +22,7 @@ namespace XPDataBus
 		apt_dat_path = get_apt_dat_path();
 		default_data_path = get_default_data_path();
 
-		for (int i = 0; i < data_refs->size(); i++)
+		for (int i = 0; i < int(data_refs->size()); i++)
 		{
 			std::pair<std::string, generic_ptr> tmp = std::make_pair(data_refs->at(i).name, data_refs->at(i).val);
 			custom_data_refs.insert(tmp);
@@ -30,6 +30,7 @@ namespace XPDataBus
 		max_queue_refresh = max_q_refresh;
 		flt_loop_id = reg_flt_loop();
 		XPLMScheduleFlightLoop(flt_loop_id, 1, true);
+		is_operative.store(true, ATOMIC_ORDR);
 	}
 
 	std::string DataBus::get_xplane_path()
@@ -135,6 +136,10 @@ namespace XPDataBus
 
 	int DataBus::get_datai(std::string dr_name, int offset)
 	{
+		if(!is_operative.load(ATOMIC_ORDR))
+		{
+			return 0;
+		}
 		generic_val val = get_data(dr_name, offset);
 		int ret_val = 0;
 		if (xplmType_Int & val.val_type)
@@ -154,6 +159,10 @@ namespace XPDataBus
 
 	float DataBus::get_dataf(std::string dr_name, int offset)
 	{
+		if(!is_operative.load(ATOMIC_ORDR))
+		{
+			return 0;
+		}
 		generic_val val = get_data(dr_name, offset);
 		float ret_val = 0;
 
@@ -175,6 +184,10 @@ namespace XPDataBus
 
 	double DataBus::get_datad(std::string dr_name, int offset)
 	{
+		if(!is_operative.load(ATOMIC_ORDR))
+		{
+			return 0;
+		}
 		generic_val val = get_data(dr_name, offset);
 		double ret_val = 0;
 
@@ -196,6 +209,10 @@ namespace XPDataBus
 
 	std::string DataBus::get_data_s(std::string dr_name, int offset)
 	{
+		if(!is_operative.load(ATOMIC_ORDR))
+		{
+			return "";
+		}
 		generic_val val = get_data(dr_name, offset);
 		return val.str;
 	}
@@ -406,8 +423,8 @@ namespace XPDataBus
 		else if (xplmType_Data & ptr.ptr_type)
 		{
 			char* data = reinterpret_cast<char*>(ptr.ptr);
-			size_t data_length = ptr.n_length - in->offset;
-			size_t str_length = in->str.length();
+			int data_length = ptr.n_length - in->offset;
+			int str_length = int(in->str.length());
 
 			if (str_length <= 1 && in->offset == -1) // Set all elements of output string to 1 character
 			{
@@ -548,10 +565,9 @@ namespace XPDataBus
 			std::lock_guard<std::mutex> lock(set_queue_mutex);
 			set_req data = set_queue.front();
 			set_queue.pop();
-			int retval = 0;
 			if (set_custom_data_ref(&data.dref, &data.val) == 0)
 			{
-				retval = set_data_ref(&data.dref, &data.val);
+				set_data_ref(&data.dref, &data.val);
 			}
 			counter++;
 		}
@@ -565,6 +581,10 @@ namespace XPDataBus
 		loop.refcon = this;
 		loop.callbackFunc = [](float elapsedMe, float elapsedSim, int counter, void* ref) -> float 
 								{
+									(void)elapsedMe;
+									(void)elapsedSim;
+									(void)counter;
+
 									DataBus* ptr = reinterpret_cast<DataBus*>(ref);
 									ptr->get_xplm_mag_var();
 									ptr->get_data_refs();
@@ -576,6 +596,9 @@ namespace XPDataBus
 
 	void DataBus::cleanup()
 	{
+		
+		is_operative.store(false, ATOMIC_ORDR);
+		std::lock_guard<std::mutex> lock(get_queue_mutex);
 		while (get_queue.size())
 		{
 			generic_val tmp = { {0}, "", 0, 0 };
@@ -585,12 +608,18 @@ namespace XPDataBus
 		}
 	}
 
-	DataBus::~DataBus()
+	void DataBus::disable()
 	{
+		XPLMDebugString("777_FMS: Disabling databus\n");
 		delete[] path_sep;
 		if (flt_loop_id != nullptr)
 		{
 			XPLMDestroyFlightLoop(flt_loop_id);
 		}
+	}
+
+	DataBus::~DataBus()
+	{
+		
 	}
 }
