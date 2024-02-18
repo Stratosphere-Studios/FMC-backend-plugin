@@ -3,6 +3,7 @@
 #include "lib/libxp/dataref_structs.hpp"
 #include <XPLMUtilities.h>
 #include <XPLMProcessing.h>
+#include <cmath>
 
 
 namespace StratosphereAvionics
@@ -45,15 +46,15 @@ namespace StratosphereAvionics
 
 				// Create all dataref structures
 
-				override_joy_pitch = { {"sim/operation/override/override_joystick_pitch", DR_WRITABLE, false, nullptr}, nullptr };
-				override_joy_roll = { {"sim/operation/override/override_joystick_roll", DR_WRITABLE, false, nullptr}, nullptr };
-				override_joy_hdg = { {"sim/operation/override/override_joystick_heading", DR_WRITABLE, false, nullptr}, nullptr };
+				override_joy_pitch = { {"sim/operation/override/override_joystick_pitch", DR_WRITABLE, false, nullptr}, 0 };
+				override_joy_roll = { {"sim/operation/override/override_joystick_roll", DR_WRITABLE, false, nullptr}, 0 };
+				override_joy_hdg = { {"sim/operation/override/override_joystick_heading", DR_WRITABLE, false, nullptr}, 0 };
 
 				joy_axes = { {"sim/joystick/joy_mapped_axis_value", DR_WRITABLE, false, nullptr}, nullptr, JOY_DR_ARR_LENGTH };
 
-				pitch_ratio = { {"sim/cockpit2/controls/yoke_pitch_ratio", DR_WRITABLE, false, nullptr}, nullptr };
-				roll_ratio = { {"sim/cockpit2/controls/yoke_roll_ratio", DR_WRITABLE, false, nullptr}, nullptr };
-				hdg_ratio = { {"sim/cockpit2/controls/yoke_heading_ratio", DR_WRITABLE, false, nullptr}, nullptr };
+				pitch_ratio = { {"sim/cockpit2/controls/yoke_pitch_ratio", DR_WRITABLE, false, nullptr}, 0 };
+				roll_ratio = { {"sim/cockpit2/controls/yoke_roll_ratio", DR_WRITABLE, false, nullptr}, 0 };
+				hdg_ratio = { {"sim/cockpit2/controls/yoke_heading_ratio", DR_WRITABLE, false, nullptr}, 0 };
 
 				// Initialize all data accessors
 
@@ -165,6 +166,9 @@ namespace StratosphereAvionics
 				loop.refcon = this;
 				loop.callbackFunc = [](float elapsedMe, float elapsedSim, int counter, void* ref) -> float
 				{
+					(void)elapsedMe;
+					(void)elapsedSim;
+					(void)counter;
 					InputFilter* ptr = reinterpret_cast<InputFilter*>(ref);
 					ptr->update_filter();
 					return FLCB_FRAMES;

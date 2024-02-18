@@ -21,65 +21,65 @@ std::vector<int> fmc_r_int_dr = { -1, 1 };
 
 
 std::vector<DRUtil::dref_i> int_datarefs = {
-	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, false, nullptr}, 0},
 
 	// FMC L data refs:
 
-	{{"Strato/777/FMC/FMC_L/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/page", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/clear_msg", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/page", DR_WRITABLE, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[0]},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[0]},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_L/scratchpad/not_in_database", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/scratchpad/not_in_database", DR_READONLY, false, nullptr}, 0},
 
 	// FMC R data refs:
 
-	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/clear_msg", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/page", DR_WRITABLE, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_elev", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[0]},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, &fmc_r_int_dr[1]},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[0]},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_R/scratchpad/not_in_database", DR_READONLY, false, nullptr}, nullptr}
+	{{"Strato/777/FMC/FMC_R/scratchpad/not_in_database", DR_READONLY, false, nullptr}, 0}
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
-	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lat", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_fom", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lat", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_lon", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/RAD_NAV/DME_DME/pos_fom", DR_READONLY, false, nullptr}, 0},
 
 	// FMC L data refs:
 
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, 0},
 
 	// FMC R data refs:
 
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, nullptr},
-	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, nullptr}
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lat", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_lon", DR_READONLY, false, nullptr}, 0},
+	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_freq", DR_READONLY, false, nullptr}, 0}
 };
 
 std::vector<DRUtil::dref_ia> int_arr_datarefs = {

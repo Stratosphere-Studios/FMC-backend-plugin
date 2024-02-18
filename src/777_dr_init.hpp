@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dataref_structs.hpp"
-#include "fmc_sys.hpp"
+#include <fmc_sys.hpp>
 #include <vector>
 
 
@@ -27,7 +27,7 @@ namespace fmc_dr
 	
 	int register_data_refs(custom_dr_ptr data_refs, dr_init drs)
 	{
-		for (int i = 0; i < drs.int_drs->size(); i++)
+		for (int i = 0; i < int(drs.int_drs->size()); i++)
 		{
 			int ret = drs.int_drs->at(i).init();
 
@@ -36,11 +36,12 @@ namespace fmc_dr
 				return 0;
 			}
 
-			XPDataBus::custom_data_ref_entry e = { drs.int_drs->at(i).dr.name, {(void*)drs.int_drs->at(i).val, xplmType_Int} };
+			XPDataBus::custom_data_ref_entry e = { drs.int_drs->at(i).dr.name, 
+					{(void*)&drs.int_drs->at(i).val, xplmType_Int, 1} };
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < drs.double_drs->size(); i++)
+		for (int i = 0; i < int(drs.double_drs->size()); i++)
 		{
 			int ret = drs.double_drs->at(i).init();
 
@@ -49,12 +50,12 @@ namespace fmc_dr
 				return 0;
 			}
 
-			XPDataBus::custom_data_ref_entry e = { drs.double_drs->at(i).dr.name, {(void*)drs.double_drs->at(i).val,
-													xplmType_Double} };
+			XPDataBus::custom_data_ref_entry e = { drs.double_drs->at(i).dr.name, {(void*)&drs.double_drs->at(i).val,
+													xplmType_Double, 1} };
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < drs.int_arr_drs->size(); i++)
+		for (int i = 0; i < int(drs.int_arr_drs->size()); i++)
 		{
 			int ret = drs.int_arr_drs->at(i).init();
 
@@ -64,11 +65,11 @@ namespace fmc_dr
 			}
 
 			XPDataBus::custom_data_ref_entry e = { drs.int_arr_drs->at(i).dr.name, {(void*)drs.int_arr_drs->at(i).array,
-													xplmType_IntArray, size_t(drs.int_arr_drs->at(i).n_length)} };
+													xplmType_IntArray, drs.int_arr_drs->at(i).n_length} };
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < drs.float_arr_drs->size(); i++)
+		for (int i = 0; i < int(drs.float_arr_drs->size()); i++)
 		{
 			int ret = drs.float_arr_drs->at(i).init();
 
@@ -78,11 +79,11 @@ namespace fmc_dr
 			}
 
 			XPDataBus::custom_data_ref_entry e = { drs.float_arr_drs->at(i).dr.name, {(void*)drs.float_arr_drs->at(i).array,
-													xplmType_FloatArray, size_t(drs.float_arr_drs->at(i).n_length)} };
+													xplmType_FloatArray, drs.float_arr_drs->at(i).n_length} };
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < drs.str_drs->size(); i++)
+		for (int i = 0; i < int(drs.str_drs->size()); i++)
 		{
 			int ret = drs.str_drs->at(i).init();
 
@@ -92,7 +93,7 @@ namespace fmc_dr
 			}
 
 			XPDataBus::custom_data_ref_entry e = { drs.str_drs->at(i).dr.name, {(void*)drs.str_drs->at(i).str,
-													xplmType_Data, size_t(drs.str_drs->at(i).n_length)} };
+													xplmType_Data, drs.str_drs->at(i).n_length} };
 			data_refs->push_back(e);
 		}
 
@@ -101,27 +102,27 @@ namespace fmc_dr
 
 	void unregister_data_refs(dr_init drs)
 	{
-		for (int i = 0; i < drs.int_drs->size(); i++)
+		for (int i = 0; i < int(drs.int_drs->size()); i++)
 		{
 			drs.int_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < drs.double_drs->size(); i++)
+		for (int i = 0; i < int(drs.double_drs->size()); i++)
 		{
 			drs.double_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < drs.int_arr_drs->size(); i++)
+		for (int i = 0; i < int(drs.int_arr_drs->size()); i++)
 		{
 			drs.int_arr_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < drs.float_arr_drs->size(); i++)
+		for (int i = 0; i < int(drs.float_arr_drs->size()); i++)
 		{
 			drs.float_arr_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < drs.str_drs->size(); i++)
+		for (int i = 0; i < int(drs.str_drs->size()); i++)
 		{
 			drs.str_drs->at(i).unReg();
 		}
