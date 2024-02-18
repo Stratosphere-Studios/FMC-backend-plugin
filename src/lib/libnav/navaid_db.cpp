@@ -1,4 +1,16 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	Author(s): discord/bruh4096#4512
+
+	This file contains definitions of member functions used within the REF NAV DATA page.
+*/
+
 #include "navaid_db.hpp"
+
 
 namespace libnav
 {
@@ -31,15 +43,15 @@ namespace libnav
 
 		wpt_cache = wpt_db;
 
-		wpt_loaded = std::async(std::launch::async, [](NavaidDB* db) -> int {return db->load_waypoints(); }, this);
-		navaid_loaded = std::async(std::launch::async, [](NavaidDB* db) -> int {return db->load_navaids(); }, this);
+		wpt_loaded = std::async(std::launch::async, [](NavaidDB* db) -> bool {return db->load_waypoints(); }, this);
+		navaid_loaded = std::async(std::launch::async, [](NavaidDB* db) -> bool {return db->load_navaids(); }, this);
 	}
 
 	// Public member functions:
 
 	bool NavaidDB::is_loaded()
 	{
-		return bool(wpt_loaded.get() * navaid_loaded.get());
+		return wpt_loaded.get() && navaid_loaded.get();
 	}
 
 	NavaidDB::~NavaidDB()
@@ -47,7 +59,7 @@ namespace libnav
 
 	}
 
-	int NavaidDB::load_waypoints()
+	bool NavaidDB::load_waypoints()
 	{
 		std::ifstream file(sim_wpt_db_path);
 		if (file.is_open())
@@ -69,12 +81,12 @@ namespace libnav
 				i++;
 			}
 			file.close();
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
-	int NavaidDB::load_navaids()
+	bool NavaidDB::load_navaids()
 	{
 		std::ifstream file(sim_navaid_db_path);
 		if (file.is_open())
@@ -118,9 +130,9 @@ namespace libnav
 				i++;
 			}
 			file.close();
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
 	bool NavaidDB::is_wpt(std::string id) 
@@ -135,14 +147,15 @@ namespace libnav
 		{
 			std::lock_guard<std::mutex> lock(wpt_db_mutex);
 			uint16_t arr[NAV_ILS_DME];
-			for (int i = 0; i < types.size(); i++)
+			for (int i = 0; i < int(types.size()); i++)
 			{
 				arr[types.at(i)] = 1;
 			}
-			std::vector<waypoint_entry>* entries = &wpt_cache->at(id);
-			for (int i = 0; i < entries->size(); i++)
+			// Get all entries in the data base with given id
+			std::vector<waypoint_entry> entries = wpt_cache->at(id);
+			for (int i = 0; i < int(entries.size()); i++)
 			{
-				uint16_t type = entries->at(i).type;
+				uint16_t type = entries.at(i).type;
 				if (arr[type])
 				{
 					return true;
@@ -201,7 +214,7 @@ namespace libnav
 			bool is_colocated = false;
 			bool is_duplicate = false;
 			std::vector<waypoint_entry>* entries = &wpt_cache->at(wpt.id);
-			for (int i = 0; i < entries->size(); i++)
+			for (int i = 0; i < int(entries->size()); i++)
 			{
 				if (entries->at(i).navaid)
 				{

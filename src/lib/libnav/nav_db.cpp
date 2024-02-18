@@ -7,7 +7,7 @@
 
 namespace libnav
 {
-	NavDB::NavDB(ArptDB* arpt_ptr, NavaidDB* navaid_ptr)
+	NavDB::NavDB(std::shared_ptr<libnav::ArptDB> arpt_ptr, std::shared_ptr<libnav::NavaidDB> navaid_ptr)
 	{
 		navaid_db = navaid_ptr;
 		arpt_db = arpt_ptr;

@@ -82,9 +82,9 @@ namespace libnav
 
 		bool is_loaded();
 
-		int load_waypoints();
+		bool load_waypoints();
 
-		int load_navaids();
+		bool load_navaids();
 
 		bool is_wpt(std::string id);
 
@@ -102,8 +102,8 @@ namespace libnav
 		std::string sim_wpt_db_path;
 		std::string sim_navaid_db_path;
 
-		std::future<int> wpt_loaded;
-		std::future<int> navaid_loaded;
+		std::future<bool> wpt_loaded;
+		std::future<bool> navaid_loaded;
 
 		std::mutex wpt_db_mutex;
 		std::mutex navaid_db_mutex;

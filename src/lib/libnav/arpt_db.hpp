@@ -28,11 +28,11 @@
 
 
 constexpr double DB_VERSION = 1.0; // Change this if you want to rebuild runway and airport data bases
-#define N_ARPT_LINES_IGNORE 3;
-#define N_RNW_ITEMS_IGNORE_BEGINNING 8; // Number of items to ignore at the beginning of the land runway declaration.
-#define N_RNW_ITEMS_IGNORE_END 5;
-#define N_DOUBLE_OUT_PRECISION 9; // Number of indices after the decimal in the string representation of a double number
-#define MIN_RWY_LENGTH_M 2000; // If the longest runway of the airport is less than this, the airport will not be included in the database
+constexpr int N_ARPT_LINES_IGNORE = 3;
+constexpr int N_RNW_ITEMS_IGNORE_BEGINNING = 8; // Number of items to ignore at the beginning of the land runway declaration.
+constexpr int N_RNW_ITEMS_IGNORE_END = 5;
+constexpr int N_DOUBLE_OUT_PRECISION = 9; // Number of indices after the decimal in the string representation of a double number
+constexpr double MIN_RWY_LENGTH_M = 2000; // If the longest runway of the airport is less than this, the airport will not be included in the database
 
 
 enum xplm_arpt_row_codes {
@@ -51,7 +51,7 @@ namespace libnav
 		int displ_threshold_m;
 		double impl_length_m = -1;
 
-		double get_implied_length_meters()
+		double get_impl_length_m()
 		{
 			if (impl_length_m <= 0)
 			{

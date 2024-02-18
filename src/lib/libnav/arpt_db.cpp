@@ -84,7 +84,7 @@ namespace libnav
 			std::string line;
 			int i = 0;
 			int limit = N_ARPT_LINES_IGNORE;
-			airport tmp_arpt = { "", {{0, 0}, 0, 0} };
+			airport tmp_arpt = { "", {{0, 0}, 0, 0, 0} };
 			rnw_data tmp_rnw = { "", {} };
 			double max_rnw_length_m = 0;
 
@@ -105,7 +105,7 @@ namespace libnav
 						if (max_rnw_length_m >= threshold && tmp_arpt.data.transition_alt_ft + tmp_arpt.data.transition_level > 0)
 						{
 							std::unordered_map<std::string, runway_entry> apt_runways;
-							size_t n_runways = tmp_rnw.runways.size();
+							int n_runways = int(tmp_rnw.runways.size());
 
 							for (int i = 0; i < n_runways; i++)
 							{
@@ -249,7 +249,7 @@ namespace libnav
 				uint8_t precision = N_DOUBLE_OUT_PRECISION;
 				rnw_data data = rnw_queue[0];
 				rnw_queue.erase(rnw_queue.begin());
-				for (int i = 0; i < data.runways.size(); i++)
+				for (int i = 0; i < int(data.runways.size()); i++)
 				{
 					std::string rnw_start_lat = strutils::double_to_str(data.runways[i].data.start.lat_deg, precision);
 					std::string rnw_start_lon = strutils::double_to_str(data.runways[i].data.start.lon_deg, precision);
@@ -516,7 +516,7 @@ namespace libnav
 		rnw->push_back(rnw_1);
 		rnw->push_back(rnw_2);
 
-		return rnw_1.data.get_implied_length_meters();
+		return rnw_1.data.get_impl_length_m();
 	}
 
 	void ArptDB::add_to_arpt_queue(airport arpt)

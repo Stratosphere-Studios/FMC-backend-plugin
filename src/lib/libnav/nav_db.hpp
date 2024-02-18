@@ -43,7 +43,7 @@ namespace libnav
 	class NavDB
 	{
 	public:
-		NavDB(ArptDB* arpt_ptr, NavaidDB* navaid_ptr);
+		NavDB(std::shared_ptr<libnav::ArptDB> arpt_ptr, std::shared_ptr<libnav::NavaidDB> navaid_ptr);
 
 		bool is_loaded();
 
@@ -62,7 +62,7 @@ namespace libnav
 		bool is_navaid_of_type(std::string id, std::vector<int> types);
 
 	private:
-		ArptDB* arpt_db;
-		NavaidDB* navaid_db;
+		std::shared_ptr<libnav::ArptDB> arpt_db;
+		std::shared_ptr<libnav::NavaidDB> navaid_db;
 	};
 }
