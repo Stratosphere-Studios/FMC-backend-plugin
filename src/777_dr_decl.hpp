@@ -16,8 +16,8 @@ enum FMS_constants
 	DEBUG_DR_LENGTH = 32
 };
 
-std::vector<int> fmc_l_int_dr = { -1, 1 };
-std::vector<int> fmc_r_int_dr = { -1, 1 };
+constexpr int DEFAULT_WPT_IDX = -1;
+constexpr int DEFAULT_WPT_SUBPAGE = -1;
 
 
 std::vector<DRUtil::dref_i> int_datarefs = {
@@ -33,9 +33,9 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[0]},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, DEFAULT_WPT_IDX},
 	{{"Strato/777/FMC/FMC_L/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, 0},
-	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_L/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, DEFAULT_WPT_SUBPAGE},
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, 0},
@@ -51,9 +51,9 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_ft", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_length_m", DR_READONLY, false, nullptr}, 0},
 
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[0]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/wpt_idx", DR_WRITABLE, false, nullptr}, DEFAULT_WPT_IDX},
 	{{"Strato/777/FMC/FMC_R/REF_NAV/poi_type", DR_WRITABLE, false, nullptr}, 0},
-	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, fmc_r_int_dr[1]},
+	{{"Strato/777/FMC/FMC_R/SEL_WPT/subpage", DR_WRITABLE, false, nullptr}, DEFAULT_WPT_SUBPAGE},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_subpages", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/is_active", DR_WRITABLE, false, nullptr}, 0},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/n_pois_disp", DR_READONLY, false, nullptr}, 0},
