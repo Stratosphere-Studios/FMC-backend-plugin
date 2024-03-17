@@ -490,7 +490,7 @@ namespace libnav
 	double ArptDB::parse_runway(std::string line, std::vector<runway>* rnw)
 	{
 		std::stringstream s(line);
-		int limit_1 = N_RNW_ITEMS_IGNORE_BEGINNING + 1; // Add 1 because we don't need the row code
+		int limit_1 = N_RNW_ITEMS_IGNORE_BEGINNING; // Add 1 because we don't need the row code
 		int limit_2 = N_RNW_ITEMS_IGNORE_END;
 		std::string junk;
 		runway rnw_1;
