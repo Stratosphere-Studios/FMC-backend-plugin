@@ -98,7 +98,7 @@ namespace StratosphereAvionics
 
 					std::string type_str = id + " " + libnav::navaid_to_str(vec.at(i).type);
 
-					xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i - start_idx), type_str, i - start_idx);
+					xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i - start_idx), type_str);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_freq), (i - start_idx) * 3);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lat), (i - start_idx) * 3 + 1);
 					xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, float(poi_lon), (i - start_idx) * 3 + 2);
@@ -132,6 +132,7 @@ namespace StratosphereAvionics
 			xp_databus->set_dataf(out_drs.sel_desired_wpt.poi_list, 0, i * 3 + 2);
 			xp_databus->set_data_s(out_drs.sel_desired_wpt.poi_types.at(i), " ", -1);
 		}
+		xp_databus->set_datai(out_drs.sel_desired_wpt.n_pois, 0);
 		xp_databus->set_datai(out_drs.sel_desired_wpt.n_subpages, 0);
 		xp_databus->set_datai(in_drs.sel_desired_wpt.curr_page, 1);
 		xp_databus->set_datai(in_drs.sel_desired_wpt.poi_idx, -1);
@@ -417,8 +418,6 @@ namespace StratosphereAvionics
 		libnav::airport_data arr_data;
 		libnav::runway_data arr_runways;
 
-		bool dep_rnw_updated = false;
-
 		while (xp_databus->get_datai(in_drs.curr_page) == static_cast<int>(fmc_pages::PAGE_RTE1) &&
 			!sim_shutdown.load(std::memory_order_relaxed))
 		{
@@ -429,12 +428,6 @@ namespace StratosphereAvionics
 			{
 				std::string dep_icao = xp_databus->get_data_s(in_drs.rte1.dep_icao);
 				avionics->set_fpln_dep_apt({ dep_icao,  dep_data });
-			}
-			else if (!dep_rnw_updated)
-			{
-				dep_rnw_updated = true;
-				std::string dep_icao = xp_databus->get_data_s(in_drs.rte1.dep_icao);
-				nav_db->get_apt_rwys(dep_icao, &dep_runways);
 			}
 			if (ret2)
 			{
@@ -448,9 +441,8 @@ namespace StratosphereAvionics
 
 			strip_str(&tmp, &rnw_curr);
 
-			if (rnw_curr != rnw_last)
+			if (rnw_curr != "")
 			{
-				dr_cache->set_val_s(in_drs.rte1.dep_rnw, rnw_curr);
 				xp_databus->set_data_s(in_drs.rte1.dep_rnw, " ", -1);
 				if (dep_runways.find(rnw_curr) != dep_runways.end())
 				{
