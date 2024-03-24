@@ -9,8 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(avionics_sys "")
 
 
-add_subdirectory(lib)
-add_subdirectory(fmc)
+add_subdirectory(src/lib)
+add_subdirectory(src/fmc)
 
 add_definitions(-DXPLM200=1 -DXPLM210=1 -DXPLM300=1 -DXPLM301=1 -DXPLM400 -DDEBUG=1)
 if(APPLE)
@@ -33,15 +33,14 @@ endif()
 
 # Set up libacfutils
 
-#target_compile_options(777_FMS PUBLIC -Wall -Wextra -Werror -g)
 option(LIBACFUTILS "")
 
 set(SDK_ROOT "${LIBACFUTILS}/SDK")
 
 # Set up out plugin
 
-file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-FILE(GLOB HDR_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+FILE(GLOB HDR_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 add_library(stratosphere_fms_plugin SHARED ${SRC_FILES} ${HDR_FILES})
 target_compile_options(stratosphere_fms_plugin PUBLIC -Wall -Wextra -Werror)
 
@@ -87,8 +86,8 @@ target_include_directories(libxp PUBLIC
     "${SDK_ROOT}/CHeaders/Widgets"
     "${SDK_ROOT}/CHeaders/Wrappers"
 )
-target_include_directories(stratosphere_fms_plugin PUBLIC "fmc")
-target_include_directories(avionics_sys PUBLIC "lib/")
+target_include_directories(stratosphere_fms_plugin PUBLIC "src/fmc")
+target_include_directories(avionics_sys PUBLIC "src/lib/")
 
 target_link_libraries(avionics_sys PUBLIC libnav libxp libtime)
 target_link_libraries(stratosphere_fms_plugin PUBLIC avionics_sys)
