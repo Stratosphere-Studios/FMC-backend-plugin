@@ -86,8 +86,6 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			val = 0;
-
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -107,7 +105,6 @@ namespace DRUtil
 						nullptr, nullptr,
 						this, this);
 				dr.xpdr = XPLMFindDataRef(dr.name);
-				set(0);
 				dr.regInDRE();
 			}
 			else
@@ -162,8 +159,6 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			val = 0;
-
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -183,7 +178,6 @@ namespace DRUtil
 						nullptr, nullptr,
 						this, this);
 				dr.xpdr = XPLMFindDataRef(dr.name);
-				set(0);
 				dr.regInDRE();
 			}
 			else
@@ -239,8 +233,6 @@ namespace DRUtil
 			If the dataref already exists, just gives a handle to it
 			*/
 
-			val = 0;
-
 			XPLMDataRef test_dr = XPLMFindDataRef(dr.name);
 			if (test_dr == nullptr)
 			{
@@ -260,7 +252,6 @@ namespace DRUtil
 						nullptr, nullptr,
 						this, this);
 				dr.xpdr = XPLMFindDataRef(dr.name);
-				set(0);
 				dr.regInDRE();
 			}
 			else
