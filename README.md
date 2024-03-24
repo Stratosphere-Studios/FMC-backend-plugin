@@ -6,11 +6,6 @@ Please, note that this is not meant to be used outside of the
 
 ## Getting started
 
-### FAQ
-
-Q: master, or stable: which one should I use?
-A: It comes down to what you want to do. If you just want to compile the plugin and use it, you should choose stable. Otherwise, use the master branch. It doesn't have the left FMC thread and datarefs associated with it, which saves a lot of head aches during the development.
-
 ### Compiling on linux/mac:
 
 1) Make sure you have CMake and g++ installed.
@@ -28,7 +23,7 @@ cmake .. && make
 3) Create a "build" directory inside src and cd into it.
 4) Run the following commands in the terminal
 ```text
-cmake ..
-cmake --build "${build_directory_path}"
+cmake .. -G "MSYS Makefiles" -DLIBACFUTILS=C:/Users/bruh/Documents/programming/libacfutils
+cmake --build .
 ```
 If the plugin has been compiled and integrated correctly, you should get files named Strato_777_apt.dat and Strato_777_rnw.dat in your X-Plane/Output/preferences directory.
