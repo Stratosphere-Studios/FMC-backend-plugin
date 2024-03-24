@@ -17,7 +17,7 @@ enum FMS_constants
 };
 
 constexpr int DEFAULT_WPT_IDX = -1;
-constexpr int DEFAULT_WPT_SUBPAGE = -1;
+constexpr int DEFAULT_WPT_SUBPAGE = 1;
 
 
 std::vector<DRUtil::dref_i> int_datarefs = {

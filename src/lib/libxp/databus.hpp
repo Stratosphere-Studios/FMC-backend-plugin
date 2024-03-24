@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "XPLMProcessing.h"
-#include "XPLMUtilities.h"
-#include "XPLMPlugin.h"
-#include "XPLMScenery.h"
+#include <XPLMProcessing.h>
+#include <XPLMUtilities.h>
+#include <XPLMPlugin.h>
+#include <XPLMScenery.h>
 #include "common.hpp"
 #include <vector>
 #include <queue>
