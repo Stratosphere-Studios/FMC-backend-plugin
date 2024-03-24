@@ -66,6 +66,8 @@ namespace StratosphereAvionics
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_apt = apt;
 		xp_databus->set_data_s(out_drs.dep_icao, apt.icao);
+
+		xp_databus->set_data_s(out_drs.dep_rnw, " ", -1);
 	}
 
 	libnav::airport AvionicsSys::get_fpln_arr_apt()
