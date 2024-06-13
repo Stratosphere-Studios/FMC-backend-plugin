@@ -6,7 +6,7 @@ Please, note that this is not meant to be used outside of the
 
 ## Getting started
 
-This plugin uses [libacfutils](https://github.com/skiselkov/libacfutils) library. Make sure you have that installed before you proceed any further.
+This plugin uses [libacfutils](https://github.com/skiselkov/libacfutils) and [libnav](https://github.com/BRUHegg/libnav) libraries. Make sure you have these installed before you proceed any further.
 
 ### Compiling on linux/mac:
 
@@ -15,7 +15,7 @@ This plugin uses [libacfutils](https://github.com/skiselkov/libacfutils) library
 3) Create a "build" directory inside the repository directory and cd into it.
 4) Run the following command in the terminal:
 ```text
-cmake .. -DLIBACFUTILS={Your libacfutils path}
+cmake .. -DLIBACFUTILS={Your libacfutils path} -DLIBNAV={Your libnav path}
 make
 ```
 
@@ -26,7 +26,7 @@ make
 3) Create a "build" directory inside the repository directory and cd into it.
 4) Run the following commands in the terminal
 ```text
-cmake .. -G "MSYS Makefiles" -DLIBACFUTILS={Your libacfutils path}
+cmake .. -G "MSYS Makefiles" -DLIBACFUTILS={Your libacfutils path} -DLIBNAV={Your libnav path}
 cmake --build .
 ```
 If the plugin has been compiled and integrated correctly, you should get files named Strato_777_apt.dat and Strato_777_rnw.dat in your X-Plane/Output/preferences directory.
@@ -34,6 +34,6 @@ If the plugin has been compiled and integrated correctly, you should get files n
 
 ### Credits
 
-[BRUHegg](https://github.com/BRUHegg): creator of this plugin
+[BRUHegg](https://github.com/BRUHegg): creator of this plugin and [libnav](https://github.com/BRUHegg/libnav)
 [Saso Kiselkov](https://github.com/skiselkov): creator of the libacfutils library
 [Amy Parent](https://github.com/amyinorbit): mtcr-demo
