@@ -14,10 +14,14 @@
 #pragma once
 
 #include "navaid_tuner.hpp"
+#include <vector>
 
 
 namespace StratosphereAvionics
 {
+	typedef std::vector<libnav::waypoint_t> wpt_tile_t;
+
+
 	struct navaid_selector_out_drs
 	{
 		// These are DEBUG-ONLY!
@@ -55,7 +59,7 @@ namespace StratosphereAvionics
 
 		libnav::wpt_db_t* wpt_db;
 
-		libnav::wpt_tile_t navaid_cache;
+		wpt_tile_t navaid_cache;
 
 		radnav_util::navaid_t vor_dme_cand;
 

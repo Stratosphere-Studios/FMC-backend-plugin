@@ -23,7 +23,8 @@ namespace StratosphereAvionics
 		bl = {};
 	}
 
-	void BlackList::add_to_black_list(std::string* id, libnav::waypoint_entry* data, double bl_dur)
+	void BlackList::add_to_black_list(std::string* id, libnav::waypoint_entry_t* data, 
+		double bl_dur)
 	{
 		if (data->navaid) // Make sure the navaid pointer isn't null.
 		{
@@ -43,7 +44,7 @@ namespace StratosphereAvionics
 		}
 	}
 
-	void BlackList::remove_from_black_list(std::string* id, libnav::waypoint_entry* data)
+	void BlackList::remove_from_black_list(std::string* id, libnav::waypoint_entry_t* data)
 	{
 		if (data->navaid) // Make sure the navaid pointer isn't null.
 		{
@@ -55,7 +56,8 @@ namespace StratosphereAvionics
 		}
 	}
 
-	bool BlackList::is_black_listed(std::string* id, libnav::waypoint_entry* data, double c_time_sec)
+	bool BlackList::is_black_listed(std::string* id, libnav::waypoint_entry_t* data,
+		 double c_time_sec)
 	{
 		if (data->navaid)
 		{
@@ -80,7 +82,7 @@ namespace StratosphereAvionics
 
 	// Private functions
 
-	std::string BlackList::get_black_list_key(std::string* id, libnav::waypoint_entry* data)
+	std::string BlackList::get_black_list_key(std::string* id, libnav::waypoint_entry_t* data)
 	{
 		if (data->navaid)
 		{
@@ -106,19 +108,19 @@ namespace StratosphereAvionics
 		n_update_freq_hz = freq;
 
 		dme_dme_cand = new radnav_util::navaid_t[N_DME_DME_CAND];
-		for (int i = 0; i < N_DME_DME_CAND; i++)
+		for (size_t i = 0; i < N_DME_DME_CAND; i++)
 		{
 			dme_dme_cand[i] = {};
 		}
 		vor_dme_radio_modes = new int[N_VOR_DME_RADIOS];
-		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
+		for (size_t i = 0; i < N_VOR_DME_RADIOS; i++)
 		{
 			vor_dme_radio_modes[i] = 0;
 		}
 		vor_dme_cand = {};
 		dme_dme_cand_pair = { dme_dme_cand, dme_dme_cand + 1, 0 };
 
-		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
+		for (size_t i = 0; i < N_VOR_DME_RADIOS; i++)
 		{
 			vor_dme_radio_modes[i] = NAV_VHF_AUTO;
 			vhf_radio_t tmp_vor_dme = vhf_radio_t(databus, in.sim_radio_drs[i]);
@@ -135,7 +137,7 @@ namespace StratosphereAvionics
 		radio_thread = std::thread([](NavaidTuner* ptr) {ptr->main_loop(); }, this);
 	}
 
-	bool NavaidTuner::is_black_listed(std::string* id, libnav::waypoint_entry* data)
+	bool NavaidTuner::is_black_listed(std::string* id, libnav::waypoint_entry_t* data)
 	{
 		double c_time_sec = main_timer->get_curr_time();
 		return black_list->is_black_listed(id, data, c_time_sec);
@@ -188,7 +190,7 @@ namespace StratosphereAvionics
 
 	void NavaidTuner::set_vor_dme_radios()
 	{
-		for (int i = 0; i < N_VOR_DME_RADIOS; i++)
+		for (size_t i = 0; i < N_VOR_DME_RADIOS; i++)
 		{
 			int mode = vor_dme_radio_modes[i];
 			double c_time_sec = main_timer->get_curr_time();
@@ -203,7 +205,8 @@ namespace StratosphereAvionics
 
 				if (mode == NAV_VHF_AUTO)
 				{
-					int check_val = memcmp(&curr_radio->tuned_navaid.data, &cand.data, sizeof(libnav::waypoint_entry));
+					int check_val = memcmp(&curr_radio->tuned_navaid.data, &cand.data, 
+						sizeof(libnav::waypoint_entry_t));
 					if (check_val) // Proceed to compare qualities if the tuned navaid doesn't match the current navaid.
 					{
 						if (is_b_listed)
@@ -246,7 +249,7 @@ namespace StratosphereAvionics
 		if (c_time_sec >= max_tune_time_sec + RADIO_TUNE_DELAY_SEC)
 		{
 			radnav_util::navaid_pair_t cand_pair = get_dme_dme_cand();
-			for (int i = 0; i < N_DME_DME_RADIOS && !is_b_listed_any; i++)
+			for (size_t i = 0; i < N_DME_DME_RADIOS && !is_b_listed_any; i++)
 			{
 				radnav_util::navaid_t* tmp = &vor_dme_radios[i].tuned_navaid;
 				bool is_b_listed = black_list->is_black_listed(&tmp->id, &tmp->data, c_time_sec);
@@ -263,7 +266,8 @@ namespace StratosphereAvionics
 				double dist_1 = double(xp_databus->get_dataf(dme_dme_radios[0].dr_list.dme_nm, dme_dme_radios[0].dr_list.dr_idx));
 				double dist_2 = double(xp_databus->get_dataf(dme_dme_radios[1].dr_list.dme_nm, dme_dme_radios[1].dr_list.dr_idx));
 				double phi = get_curr_dme_dme_phi_rad(ppos, dist_1, dist_2);
-				double curr_qual = get_curr_dme_dme_qual(dist_1, dist_2, phi * RAD_TO_DEG);
+				double curr_qual = get_curr_dme_dme_qual(dist_1, dist_2, 
+					phi * geo::RAD_TO_DEG);
 				std::string dme_dme_debug = dme_dme_radios[0].tuned_navaid.id + " " +
 					dme_dme_radios[1].tuned_navaid.id + " " + std::to_string(curr_qual);
 				xp_databus->set_data_s(out_drs.curr_dme_pair_debug, dme_dme_debug);
@@ -323,10 +327,12 @@ namespace StratosphereAvionics
 		int is_same_reverse = 0; // is the cand_pair the same as our current pair, but reversed?
 
 		radnav_util::navaid_t* cand_navaids[N_DME_DME_CAND] = { cand_pair.n1, cand_pair.n2 };
-		for (int i = 0; i < N_DME_DME_RADIOS; i++)
+		for (size_t i = 0; i < N_DME_DME_RADIOS; i++)
 		{
-			int check_val = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[i]->data, sizeof(libnav::waypoint_entry));
-			int check_val_rev = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[N_DME_DME_RADIOS - i - 1]->data, sizeof(libnav::waypoint_entry));
+			int check_val = memcmp(&dme_dme_radios[i].tuned_navaid.data, &cand_navaids[i]->data, 
+				sizeof(libnav::waypoint_entry_t));
+			int check_val_rev = memcmp(&dme_dme_radios[i].tuned_navaid.data, 
+				&cand_navaids[N_DME_DME_RADIOS - i - 1]->data, sizeof(libnav::waypoint_entry_t));
 			is_same += int(check_val == 0);
 			is_same_reverse += int(check_val_rev == 0);
 		}
@@ -367,10 +373,10 @@ namespace StratosphereAvionics
 		The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
 	*/
 
-	void NavaidTuner::update_vor_dme_conn(int radio_idx, double c_time)
+	void NavaidTuner::update_vor_dme_conn(size_t radio_idx, double c_time)
 	{
 		vhf_radio_t* curr_radio = &vor_dme_radios[radio_idx];
-		if (curr_radio->is_sig_recv(NAV_VOR_DME))
+		if (curr_radio->is_sig_recv(libnav::NavaidType::VOR_DME))
 		{
 			vor_dme_radios[radio_idx].conn_retry = false;
 			// Calculate FOM and position
@@ -384,10 +390,13 @@ namespace StratosphereAvionics
 				double dist = vor_dme_radios[radio_idx].get_gnd_dist(total_dist, ppos.alt_ft);
 
 				geo::point pos = geo::get_pos_from_brng_dist(vor_dme_radios[radio_idx].tuned_navaid.data.pos, brng, dist);
-				double pos_fom_m = radnav_util::get_vor_dme_fom(total_dist) * NM_TO_M;
+				double pos_fom_m = radnav_util::get_vor_dme_fom(total_dist) * geo::NM_TO_M;
 
-				xp_databus->set_datad(out_drs.vor_dme_pos_lat, pos.lat_deg);
-				xp_databus->set_datad(out_drs.vor_dme_pos_lon, pos.lon_deg);
+				xp_databus->set_datad(out_drs.vor_dme_pos_lat, pos.lat_rad 
+					* geo::RAD_TO_DEG);
+				xp_databus->set_datad(out_drs.vor_dme_pos_lon, pos.lon_rad 
+					* geo::RAD_TO_DEG);
+
 				xp_databus->set_datad(out_drs.vor_dme_pos_fom, pos_fom_m);
 
 				vor_dme_pos_update_last = c_time;
@@ -418,14 +427,15 @@ namespace StratosphereAvionics
 	{
 		if (dist_1 * dist_2 != 0)
 		{
-			libnav::waypoint_entry* data_1 = &dme_dme_radios[0].tuned_navaid.data;
-			libnav::waypoint_entry* data_2 = &dme_dme_radios[1].tuned_navaid.data;
+			libnav::waypoint_entry_t* data_1 = &dme_dme_radios[0].tuned_navaid.data;
+			libnav::waypoint_entry_t* data_2 = &dme_dme_radios[1].tuned_navaid.data;
 			if (data_1->navaid && data_2->navaid)
 			{
 				// Get encounter geometry angle for currently tuned DMEs.
 				double gnd_dist_1 = dme_dme_radios[0].get_gnd_dist(dist_1, ppos.alt_ft);
 				double gnd_dist_2 = dme_dme_radios[1].get_gnd_dist(dist_2, ppos.alt_ft);
-				double gnd_dist_3 = data_1->pos.get_line_dist_nm(data_2->pos, data_1->navaid->elevation, data_2->navaid->elevation);
+				double gnd_dist_3 = data_1->pos.get_line_dist_nm(data_2->pos, 
+					data_1->navaid->elev_ft, data_2->navaid->elev_ft);
 				// Verify that triangle exists
 				if (gnd_dist_1 + gnd_dist_2 > gnd_dist_3 && gnd_dist_1 + gnd_dist_3 > gnd_dist_2 && gnd_dist_2 + gnd_dist_3 > gnd_dist_1)
 				{
@@ -480,7 +490,7 @@ namespace StratosphereAvionics
 		if (!are_same)
 		{
 			radnav_util::navaid_t* cand_navaids[N_DME_DME_CAND] = { cand_pair.n1, cand_pair.n2 };
-			for (int i = 0; i < N_DME_DME_RADIOS; i++)
+			for (size_t i = 0; i < N_DME_DME_RADIOS; i++)
 			{
 				dme_dme_radios[i].tune(*cand_navaids[i], c_time);
 			}
@@ -502,15 +512,15 @@ namespace StratosphereAvionics
 	{
 		if (dme_dme_radios[0].tuned_navaid.data.navaid && dme_dme_radios[1].tuned_navaid.data.navaid)
 		{
-			libnav::waypoint_entry* data_1 = &dme_dme_radios[0].tuned_navaid.data;
-			libnav::waypoint_entry* data_2 = &dme_dme_radios[1].tuned_navaid.data;
-			double elev_1 = data_1->navaid->elevation;
-			double elev_2 = data_2->navaid->elevation;
+			libnav::waypoint_entry_t* data_1 = &dme_dme_radios[0].tuned_navaid.data;
+			libnav::waypoint_entry_t* data_2 = &dme_dme_radios[1].tuned_navaid.data;
+			double elev_1 = data_1->navaid->elev_ft;
+			double elev_2 = data_2->navaid->elev_ft;
 			// Calculate position and FOM
 			geo::point3d ppos = get_ac_pos();
 			geo::point pos[2];
 			int n_pos_calc = 0;
-			if (data_1->pos.lon_deg < data_2->pos.lon_deg)
+			if (data_1->pos.lon_rad < data_2->pos.lon_rad)
 			{
 				n_pos_calc = geo::get_dme_dme_pos(data_1->pos, data_2->pos, dist_1, dist_2, elev_1, elev_2, ppos.alt_ft, pos);
 			}
@@ -520,10 +530,12 @@ namespace StratosphereAvionics
 			}
 			if (n_pos_calc)
 			{
-				double d_1 = pos[0].get_great_circle_distance_nm(ppos.p);
-				double d_2 = pos[1].get_great_circle_distance_nm(ppos.p);
+				double d_1 = pos[0].get_gc_dist_nm(ppos.p);
+				double d_2 = pos[1].get_gc_dist_nm(ppos.p);
 				geo::point* dme_dme_pos;
-				double pos_fom_m = radnav_util::get_dme_dme_fom(dist_1, dist_2, phi_rad) * NM_TO_M;
+				double pos_fom_m = radnav_util::get_dme_dme_fom(dist_1, dist_2, phi_rad) 
+					* geo::NM_TO_M;
+				
 				if (d_1 < d_2)
 				{
 					dme_dme_pos = &pos[0];
@@ -533,8 +545,11 @@ namespace StratosphereAvionics
 					dme_dme_pos = &pos[1];
 				}
 
-				xp_databus->set_datad(out_drs.dme_dme_pos_lat, dme_dme_pos->lat_deg);
-				xp_databus->set_datad(out_drs.dme_dme_pos_lon, dme_dme_pos->lon_deg);
+				xp_databus->set_datad(out_drs.dme_dme_pos_lat, dme_dme_pos->lat_rad
+					 * geo::RAD_TO_DEG);
+				xp_databus->set_datad(out_drs.dme_dme_pos_lon, dme_dme_pos->lon_rad
+					 * geo::RAD_TO_DEG);
+
 				xp_databus->set_datad(out_drs.dme_dme_pos_fom, pos_fom_m);
 			}
 			else
@@ -548,8 +563,8 @@ namespace StratosphereAvionics
 
 	void NavaidTuner::update_dme_dme_conn(double dist_1, double dist_2, double phi_rad, double c_time)
 	{
-		bool is_sig_recv_1 = dme_dme_radios[0].is_sig_recv(NAV_DME);
-		bool is_sig_recv_2 = dme_dme_radios[1].is_sig_recv(NAV_DME);
+		bool is_sig_recv_1 = dme_dme_radios[0].is_sig_recv(libnav::NavaidType::DME);
+		bool is_sig_recv_2 = dme_dme_radios[1].is_sig_recv(libnav::NavaidType::DME);
 		if (is_sig_recv_1 && is_sig_recv_2)
 		{
 			dme_dme_radios[0].conn_retry = false;

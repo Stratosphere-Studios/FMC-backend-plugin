@@ -44,15 +44,15 @@ namespace StratosphereAvionics
 	{
 		std::vector<radnav_util::navaid_pair_t> navaid_pairs;
 
-		int n_navaids = N_DME_DME_STA;
-		if (int(navaids->size()) < n_navaids)
+		size_t n_navaids = N_DME_DME_STA;
+		if (navaids->size() < n_navaids)
 		{
-			n_navaids = int(navaids->size());
+			n_navaids = navaids->size();
 		}
 
-		for (int i = 0; i < n_navaids; i++)
+		for (size_t i = 0; i < n_navaids; i++)
 		{
-			for (int j = i + 1; j < n_navaids; j++)
+			for (size_t j = i + 1; j < n_navaids; j++)
 			{
 				radnav_util::navaid_t* p1 = &navaids->at(i);
 				radnav_util::navaid_t* p2 = &navaids->at(j);
@@ -76,7 +76,7 @@ namespace StratosphereAvionics
 
 		// Set some DEBUG-ONLY datarefs
 
-		for (int i = 0; i < int(out_drs.dme_dme_cand_data.size()); i++)
+		for (size_t i = 0; i < out_drs.dme_dme_cand_data.size(); i++)
 		{
 			std::string id1 = navaid_pairs.at(i).n1->id;
 			std::string id2 = navaid_pairs.at(i).n2->id;
@@ -97,13 +97,13 @@ namespace StratosphereAvionics
 		// Add all navaids within min_navaid_dist_nm miles from the 
 		// aircraft to navaids.
 
-		for (int i = 0; i < int(navaid_cache.size()); i++)
+		for (size_t i = 0; i < navaid_cache.size(); i++)
 		{
-			libnav::waypoint tmp = navaid_cache.at(i);
+			libnav::waypoint_t tmp = navaid_cache.at(i);
 
 			if (!navaid_tuner->is_black_listed(&tmp.id, &tmp.data))
 			{
-				geo::point3d tmp_pos = { tmp.data.pos, tmp.data.navaid->elevation };
+				geo::point3d tmp_pos = { tmp.data.pos, tmp.data.navaid->elev_ft };
 				double dist = tmp_pos.get_true_dist_nm(ac_pos);
 
 				if (dist <= min_navaid_dist_nm)
@@ -120,10 +120,10 @@ namespace StratosphereAvionics
 		std::sort(navaids.begin(), navaids.end(),
 			[](radnav_util::navaid_t n1, radnav_util::navaid_t n2) -> bool { return n1.qual > n2.qual; });
 
-		int j = 0;
-		for (int i = 0; i < int(navaids.size()); i++)
+		size_t j = 0;
+		for (size_t i = 0; i < navaids.size(); i++)
 		{
-			if (navaids.at(i).data.type == NAV_VOR_DME)
+			if (navaids.at(i).data.type == libnav::NavaidType::VOR_DME)
 			{
 				if (j == 0)
 				{
@@ -132,7 +132,7 @@ namespace StratosphereAvionics
 				xp_databus->set_data_s(out_drs.vor_dme_cand_data.at(j), navaids.at(i).id + " " + std::to_string(navaids.at(i).qual));
 				j++;
 			}
-			if (j == int(out_drs.vor_dme_cand_data.size()))
+			if (j == out_drs.vor_dme_cand_data.size())
 			{
 				break;
 			}
@@ -142,15 +142,16 @@ namespace StratosphereAvionics
 		update_dme_dme_cand(ac_pos.p, &navaids);
 	}
 
-	void NavaidSelector::update(libnav::wpt_db_t* ptr, geo::point3d ac_pos, double c_time_sec)
+	void NavaidSelector::update(libnav::wpt_db_t* ptr, geo::point3d ac_pos, 
+		double c_time_sec)
 	{
 		if (wpt_db != ptr)
 		{
 			wpt_db = ptr;
 		}
 
-		if (abs(ac_pos_last.p.lat_deg - ac_pos.p.lat_deg) > cache_tile_size * 0.3 ||
-			abs(ac_pos_last.p.lon_deg - ac_pos.p.lon_deg) > cache_tile_size * 0.3)
+		if (abs(ac_pos_last.p.lat_rad - ac_pos.p.lat_rad) > cache_tile_size * 0.3 ||
+			abs(ac_pos_last.p.lon_rad - ac_pos.p.lon_rad) > cache_tile_size * 0.3)
 		{
 			update_navaid_cache(ac_pos.p);
 		}
@@ -179,15 +180,18 @@ namespace StratosphereAvionics
 		{
 			if (it.first.length() < ILS_NAVAID_ID_LENGTH) // ILS components aren't welcome
 			{
-				for (int i = 0; i < int(it.second.size()); i++)
+				for (size_t i = 0; i < it.second.size(); i++)
 				{
-					libnav::waypoint_entry tmp = it.second.at(i);
-					if (tmp.navaid && (tmp.type == NAV_DME || tmp.type == NAV_DME_ONLY || tmp.type == NAV_VOR_DME))
+					libnav::waypoint_entry_t tmp = it.second.at(i);
+					if (tmp.navaid && 
+						(tmp.type == libnav::NavaidType::DME || 
+						tmp.type == libnav::NavaidType::DME_ONLY || 
+						tmp.type == libnav::NavaidType::VOR_DME))
 					{
-						if (abs(tmp.pos.lat_deg - ac_pos.lat_deg) <= cache_tile_size &&
-							abs(tmp.pos.lon_deg - ac_pos.lon_deg) <= cache_tile_size)
+						if (abs(tmp.pos.lat_rad - ac_pos.lat_rad) <= cache_tile_size &&
+							abs(tmp.pos.lon_rad - ac_pos.lon_rad) <= cache_tile_size)
 						{
-							libnav::waypoint tmp_wpt = { it.first, tmp };
+							libnav::waypoint_t tmp_wpt = { it.first, tmp };
 							navaid_cache.push_back(tmp_wpt);
 						}
 					}

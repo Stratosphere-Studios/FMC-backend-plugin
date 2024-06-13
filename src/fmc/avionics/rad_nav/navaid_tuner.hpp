@@ -20,14 +20,14 @@
 
 namespace StratosphereAvionics
 {
-	constexpr int N_DME_DME_CAND = 2;
-	constexpr int N_DME_DME_STA = 32; // Number of DMEs used to make pairs(for DME/DME position)
+	constexpr size_t N_DME_DME_CAND = 2;
+	constexpr size_t N_DME_DME_STA = 32; // Number of DMEs used to make pairs(for DME/DME position)
 	constexpr double NAVAID_PROHIBIT_PERMANENT = -1;
 	constexpr double NAVAID_MAX_QUAL_DIFF = 0.2; // If the difference in quality between candidate and current station is greater than this, the candidate(s) gets tuned.
 	constexpr int ILS_NAVAID_ID_LENGTH = 4;
 
-	constexpr int N_VOR_DME_RADIOS = 2; // Number of radios auto-tuned for VOR/DME position estimation
-	constexpr int N_DME_DME_RADIOS = 2; // Number of radios auto-tuned for DME/DME position estimation
+	constexpr size_t N_VOR_DME_RADIOS = 2; // Number of radios auto-tuned for VOR/DME position estimation
+	constexpr size_t N_DME_DME_RADIOS = 2; // Number of radios auto-tuned for DME/DME position estimation
 	constexpr int N_VHF_NAV_RADIOS = N_VOR_DME_RADIOS + N_DME_DME_RADIOS;
 	constexpr std::memory_order UPDATE_FLG_ORDR = std::memory_order_relaxed;
 	constexpr double RADIO_TUNE_DELAY_SEC = 2;
@@ -53,18 +53,18 @@ namespace StratosphereAvionics
 	public:
 		BlackList();
 
-		void add_to_black_list(std::string* id, libnav::waypoint_entry* data, double bl_dur = NAVAID_PROHIBIT_PERMANENT);
+		void add_to_black_list(std::string* id, libnav::waypoint_entry_t* data, double bl_dur = NAVAID_PROHIBIT_PERMANENT);
 
-		void remove_from_black_list(std::string* id, libnav::waypoint_entry* data);
+		void remove_from_black_list(std::string* id, libnav::waypoint_entry_t* data);
 
-		bool is_black_listed(std::string* id, libnav::waypoint_entry* data, double c_time_sec);
+		bool is_black_listed(std::string* id, libnav::waypoint_entry_t* data, double c_time_sec);
 
 	private:
 		std::unordered_map<std::string, double> bl;
 		std::mutex bl_mutex;
 
 
-		static std::string get_black_list_key(std::string* id, libnav::waypoint_entry* data);
+		static std::string get_black_list_key(std::string* id, libnav::waypoint_entry_t* data);
 	};
 
 
@@ -85,7 +85,7 @@ namespace StratosphereAvionics
 		NavaidTuner(std::shared_ptr<XPDataBus::DataBus> databus, navaid_tuner_in_drs in,
 			navaid_tuner_out_drs out, int ut);
 
-		bool is_black_listed(std::string* id, libnav::waypoint_entry* data);
+		bool is_black_listed(std::string* id, libnav::waypoint_entry_t* data);
 
 		void set_vor_dme_cand(radnav_util::navaid_t cand);
 
@@ -167,7 +167,7 @@ namespace StratosphereAvionics
 			The calculated position, as well as its FOM(2*standard deviation), get output using certain datarefs.
 		*/
 
-		void update_vor_dme_conn(int radio_idx, double c_time);
+		void update_vor_dme_conn(size_t radio_idx, double c_time);
 
 		/*
 			Function: get_curr_dme_dme_phi_rad

@@ -13,7 +13,7 @@
 
 
 #include "databus.hpp"
-#include "nav_db.hpp"
+#include <libnav/navaid_db.hpp>
 
 
 namespace StratosphereAvionics
@@ -48,7 +48,7 @@ namespace StratosphereAvionics
 
 		void tune(radnav_util::navaid_t new_navaid, double c_time);
 
-		bool is_sig_recv(int expected_type);
+		bool is_sig_recv(libnav::NavaidType expected_type);
 
 		/*
 			The following function returns the ground distance to the tuned nav aid.

@@ -6,23 +6,25 @@
 #include <atomic>
 #include <libxp/dr_cache.hpp>
 #include <libxp/databus.hpp>
-#include <libnav/nav_db.hpp>
+#include <libnav/navaid_db.hpp>
+#include <libnav/arpt_db.hpp>
 #include <libtime/timer.hpp>
 #include "rad_nav/navaid_selector.hpp"
 
 
-// Minimal distance to navaid for radio navigation.
-
-constexpr double min_navaid_dist_nm = 160;
-
-// Period in seconds after which the radio navigation 
-// candidates will be re-examined
-
-constexpr int rad_nav_cand_update_time_sec = 5;
-
 
 namespace StratosphereAvionics
 {
+	// Minimal distance to navaid for radio navigation.
+
+	constexpr double min_navaid_dist_nm = 160;
+
+	// Period in seconds after which the radio navigation 
+	// candidates will be re-examined
+
+	constexpr int rad_nav_cand_update_time_sec = 5;
+
+
 	struct avionics_in_drs
 	{
 		std::string sim_baro_alt_ft1, sim_baro_alt_ft2, sim_baro_alt_ft3;
@@ -45,8 +47,8 @@ namespace StratosphereAvionics
 
 	struct flightplan
 	{
-		libnav::airport dep_apt, arr_apt;
-		libnav::runway dep_rnw, arr_rnw;
+		libnav::airport_t dep_apt, arr_apt;
+		libnav::runway_t dep_rnw, arr_rnw;
 	};
 
 
@@ -69,14 +71,9 @@ namespace StratosphereAvionics
 		std::atomic<bool> sim_shutdown{ false };
 
 		std::shared_ptr<XPDataBus::DataBus> xp_databus;
-
-		std::unordered_map<std::string, std::vector<libnav::waypoint_entry>> waypoints;
-		std::unordered_map<std::string, libnav::airport_data> airports;
-		std::unordered_map<std::string, libnav::runway_data> runways;
 		
 		std::shared_ptr<libnav::ArptDB> apt_db;
 		std::shared_ptr<libnav::NavaidDB> navaid_db;
-		std::shared_ptr<libnav::NavDB> nav_db;
 
 
 		AvionicsSys(std::shared_ptr<XPDataBus::DataBus> databus, avionics_in_drs in, avionics_out_drs out,
@@ -84,23 +81,23 @@ namespace StratosphereAvionics
 
 		geo::point3d get_ac_pos();
 
-		void set_fpln_dep_apt(libnav::airport apt);
+		void set_fpln_dep_apt(libnav::airport_t apt);
 
 		std::string get_fpln_dep_icao();
 
-		void set_fpln_arr_apt(libnav::airport apt);
+		void set_fpln_arr_apt(libnav::airport_t apt);
 
-		libnav::airport get_fpln_arr_apt();
+		libnav::airport_t get_fpln_arr_apt();
 
 		std::string get_fpln_arr_icao();
 
-		void set_fpln_dep_rnw(libnav::runway rnw);
+		void set_fpln_dep_rnw(libnav::runway_t rnw);
 
-		void set_fpln_arr_rnw(libnav::runway rnw);
+		void set_fpln_arr_rnw(libnav::runway_t rnw);
 
-		void excl_navaid(std::string id, int idx);
+		void excl_navaid(std::string id, size_t idx);
 
-		void excl_vor(std::string id, int idx);
+		void excl_vor(std::string id, size_t idx);
 
 		void update_sys();
 
@@ -135,6 +132,9 @@ namespace StratosphereAvionics
 		XPDataBus::DataRefCache* dr_cache;
 		NavaidTuner* navaid_tuner;
 		NavaidSelector* navaid_selector;
+
+		libnav::wpt_db_t waypoints;
+
 
 		void update_load_status();
 

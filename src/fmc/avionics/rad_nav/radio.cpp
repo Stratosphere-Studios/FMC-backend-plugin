@@ -26,7 +26,7 @@ namespace StratosphereAvionics
 
 	void vhf_radio_t::tune(radnav_util::navaid_t new_navaid, double c_time)
 	{
-		libnav::navaid_entry* navaid_data = new_navaid.data.navaid;
+		libnav::navaid_entry_t* navaid_data = new_navaid.data.navaid;
 		if (navaid_data) // Make sure the pointer to navaid data isn't null.
 		{
 			tuned_navaid = new_navaid;
@@ -36,17 +36,17 @@ namespace StratosphereAvionics
 		}
 	}
 
-	bool vhf_radio_t::is_sig_recv(int expected_type)
+	bool vhf_radio_t::is_sig_recv(libnav::NavaidType expected_type)
 	{
 		bool vor_recv = false;
 		bool dme_recv = false;
 		switch (expected_type)
 		{
-		case NAV_VOR:
+		case libnav::NavaidType::VOR:
 			return xp_databus->get_data_s(dr_list.nav_id) == tuned_navaid.id;
-		case NAV_DME:
+		case libnav::NavaidType::DME:
 			return xp_databus->get_data_s(dr_list.dme_id) == tuned_navaid.id;
-		case NAV_VOR_DME:
+		case libnav::NavaidType::VOR_DME:
 			vor_recv = xp_databus->get_data_s(dr_list.nav_id) == tuned_navaid.id;
 			dme_recv = xp_databus->get_data_s(dr_list.dme_id) == tuned_navaid.id;
 			return vor_recv && dme_recv;
@@ -65,7 +65,8 @@ namespace StratosphereAvionics
 	{
 		if (dist && tuned_navaid.data.navaid)
 		{
-			double v_dist_nm = abs(alt_ft - tuned_navaid.data.navaid->elevation) * FT_TO_NM;
+			double v_dist_nm = abs(alt_ft - tuned_navaid.data.navaid->elev_ft) 
+				* geo::FT_TO_NM;
 			return sqrt(dist * dist - v_dist_nm * v_dist_nm);
 		}
 		return 0;
@@ -78,13 +79,14 @@ namespace StratosphereAvionics
 
 	double vhf_radio_t::get_tuned_qual(geo::point3d ac_pos, double dist)
 	{
-		libnav::navaid_entry* navaid_data = tuned_navaid.data.navaid;
+		libnav::navaid_entry_t* navaid_data = tuned_navaid.data.navaid;
 		if (navaid_data && dist) // Check that pointer to a navaid structure isn't null.
 		{
-			double v_dist_nm = abs(ac_pos.alt_ft - tuned_navaid.data.navaid->elevation) * FT_TO_NM;
-			double slant_ang_deg = asin(v_dist_nm / dist) * RAD_TO_DEG;
+			double v_dist_nm = abs(ac_pos.alt_ft - tuned_navaid.data.navaid->elev_ft) 
+				* geo::FT_TO_NM;
+			double slant_ang_deg = asin(v_dist_nm / dist) * geo::RAD_TO_DEG;
 
-			if (slant_ang_deg > 0 && slant_ang_deg < VOR_MAX_SLANT_ANGLE_DEG)
+			if (slant_ang_deg > 0 && slant_ang_deg < libnav::VOR_MAX_SLANT_ANGLE_DEG)
 			{
 				double lat_dist_nm = sqrt(dist * dist - v_dist_nm * v_dist_nm);
 				double qual = 1 - (lat_dist_nm / navaid_data->max_recv);

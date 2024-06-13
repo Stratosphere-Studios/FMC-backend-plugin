@@ -30,16 +30,12 @@ namespace StratosphereAvionics
 		std::string fix_path = xp_databus->default_data_path + "earth_fix.dat";
 		std::string navaid_path = xp_databus->default_data_path + "earth_nav.dat";
 
-		airports = {};
-		runways = {};
-
 		clock = new libtime::Timer();
 
 		// Initialize data bases
 
-		apt_db = std::make_shared<libnav::ArptDB>(&airports, &runways, sim_apt_path, tgt_apt_path, tgt_rnw_path);
-		navaid_db = std::make_shared<libnav::NavaidDB>(fix_path, navaid_path, &waypoints);
-		nav_db = std::make_shared<libnav::NavDB>(apt_db, navaid_db);
+		apt_db = std::make_shared<libnav::ArptDB>(sim_apt_path, tgt_apt_path, tgt_rnw_path);
+		navaid_db = std::make_shared<libnav::NavaidDB>(fix_path, navaid_path);
 
 		dr_cache = new XPDataBus::DataRefCache();
 
@@ -61,7 +57,7 @@ namespace StratosphereAvionics
 		return pln.dep_apt.icao;
 	}
 
-	void AvionicsSys::set_fpln_dep_apt(libnav::airport apt)
+	void AvionicsSys::set_fpln_dep_apt(libnav::airport_t apt)
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_apt = apt;
@@ -70,7 +66,7 @@ namespace StratosphereAvionics
 		xp_databus->set_data_s(out_drs.dep_rnw, " ", -1);
 	}
 
-	libnav::airport AvionicsSys::get_fpln_arr_apt()
+	libnav::airport_t AvionicsSys::get_fpln_arr_apt()
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		return pln.arr_apt;
@@ -82,30 +78,30 @@ namespace StratosphereAvionics
 		return pln.arr_apt.icao;
 	}
 
-	void AvionicsSys::set_fpln_arr_apt(libnav::airport apt)
+	void AvionicsSys::set_fpln_arr_apt(libnav::airport_t apt)
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.arr_apt = apt;
 		xp_databus->set_data_s(out_drs.arr_icao, apt.icao);
 	}
 
-	void AvionicsSys::set_fpln_dep_rnw(libnav::runway rnw)
+	void AvionicsSys::set_fpln_dep_rnw(libnav::runway_t rnw)
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.dep_rnw = rnw;
 		xp_databus->set_data_s(out_drs.dep_rnw, "RW" + rnw.id);
 	}
 
-	void AvionicsSys::set_fpln_arr_rnw(libnav::runway rnw)
+	void AvionicsSys::set_fpln_arr_rnw(libnav::runway_t rnw)
 	{
 		std::lock_guard<std::mutex> lock(fpln_mutex);
 		pln.arr_rnw = rnw;
 	}
 
-	void AvionicsSys::excl_navaid(std::string id, int idx)
+	void AvionicsSys::excl_navaid(std::string id, size_t idx)
 	{
 		std::lock_guard<std::mutex> lock(navaid_inhibit_mutex);
-		if (idx >= 0 && idx < int(navaid_inhibit.size()))
+		if (idx < navaid_inhibit.size())
 		{
 			rm_from_bl(navaid_inhibit[idx]); // Remove all previously blacklisted navaids
 
@@ -123,10 +119,10 @@ namespace StratosphereAvionics
 		}
 	}
 
-	void AvionicsSys::excl_vor(std::string id, int idx)
+	void AvionicsSys::excl_vor(std::string id, size_t idx)
 	{
 		std::lock_guard<std::mutex> lock(vor_inhibit_mutex);
-		if (idx >= 0 && idx < int(vor_inhibit.size()))
+		if (idx < vor_inhibit.size())
 		{
 			rm_from_bl(vor_inhibit[idx]); // Remove all previously blacklisted navaids
 
@@ -185,8 +181,12 @@ namespace StratosphereAvionics
 		xp_databus->set_datai("Strato/777/UI/messages/creating_databases", 1);
 		if (!sim_shutdown.load(UPDATE_FLG_ORDR))
 		{
-			bool sts = nav_db->is_loaded();
-			if (!sts)
+			libnav::DbErr err_arpt = apt_db->get_err();
+            libnav::DbErr err_wpt = navaid_db->get_wpt_err();
+            libnav::DbErr err_nav = navaid_db->get_navaid_err();
+			waypoints = navaid_db->get_db();
+			if (err_arpt != libnav::DbErr::SUCCESS || err_wpt != libnav::DbErr::SUCCESS 
+				|| err_nav != libnav::DbErr::SUCCESS)
 			{
 				xp_databus->set_datai("Strato/777/UI/messages/creating_databases", -1);
 				return;
@@ -201,8 +201,8 @@ namespace StratosphereAvionics
 		double baro_ft_2 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
 		double baro_ft_3 = xp_databus->get_datad(in_drs.sim_baro_alt_ft1);
 		std::lock_guard<std::mutex> lock(ac_pos_mutex);
-		ac_pos.p.lat_deg = xp_databus->get_datad(in_drs.sim_ac_lat_deg);
-		ac_pos.p.lon_deg = xp_databus->get_datad(in_drs.sim_ac_lon_deg);
+		ac_pos.p.lat_rad = xp_databus->get_datad(in_drs.sim_ac_lat_deg) * geo::DEG_TO_RAD;
+		ac_pos.p.lon_rad = xp_databus->get_datad(in_drs.sim_ac_lon_deg) * geo::DEG_TO_RAD;
 		ac_pos.alt_ft = (baro_ft_1 + baro_ft_2 + baro_ft_3) / 3;
 	}
 
@@ -212,10 +212,10 @@ namespace StratosphereAvionics
 
 	void AvionicsSys::add_to_bl(std::string id)
 	{
-		std::vector<libnav::waypoint_entry> entries;
-		nav_db->get_wpt_data(id, &entries);
+		std::vector<libnav::waypoint_entry_t> entries;
+		navaid_db->get_wpt_data(id, &entries);
 
-		for (int i = 0; i < int(entries.size()); i++)
+		for (size_t i = 0; i < entries.size(); i++)
 		{
 			navaid_tuner->black_list->add_to_black_list(&id, &entries.at(i));
 		}
@@ -227,12 +227,12 @@ namespace StratosphereAvionics
 
 	void AvionicsSys::rm_from_bl(std::string id)
 	{
-		std::vector<libnav::waypoint_entry> entries;
-		nav_db->get_wpt_data(id, &entries);
+		std::vector<libnav::waypoint_entry_t> entries;
+		navaid_db->get_wpt_data(id, &entries);
 
-		for (int i = 0; i < int(entries.size()); i++)
+		for (size_t i = 0; i < entries.size(); i++)
 		{
-			libnav::waypoint tmp = { id, entries.at(i) };
+			libnav::waypoint_t tmp = { id, entries.at(i) };
 			navaid_tuner->black_list->remove_from_black_list(&id, &entries.at(i));
 		}
 	}

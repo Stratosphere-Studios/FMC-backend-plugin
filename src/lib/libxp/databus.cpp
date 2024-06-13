@@ -22,7 +22,7 @@ namespace XPDataBus
 		apt_dat_path = get_apt_dat_path();
 		default_data_path = get_default_data_path();
 
-		for (int i = 0; i < int(data_refs->size()); i++)
+		for (size_t i = 0; i < data_refs->size(); i++)
 		{
 			std::pair<std::string, generic_ptr> tmp = std::make_pair(data_refs->at(i).name, data_refs->at(i).val);
 			custom_data_refs.insert(tmp);
@@ -45,7 +45,7 @@ namespace XPDataBus
 		char buf[CHAR_BUF_SIZE];
 		XPLMGetPrefsPath(buf);
 		char* file_name = XPLMExtractFileAndPath(buf);
-		return std::string(buf, 0, file_name - buf);
+		return std::string(buf, 0, size_t(file_name - buf));
 	}
 
 	std::string DataBus::get_apt_dat_path()
@@ -444,7 +444,7 @@ namespace XPDataBus
 				{
 					if (i < str_length)
 					{
-						data[i + in->offset] = in->str.at(i);
+						data[i + in->offset] = in->str.at(size_t(i));
 					}
 					else
 					{

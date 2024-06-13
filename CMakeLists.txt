@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(777_FMS CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -fPIC -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wconversion \
+    -Wsign-conversion -fPIC -g")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,12 +38,21 @@ option(LIBACFUTILS "")
 
 set(SDK_ROOT "${LIBACFUTILS}/SDK")
 
-# Set up out plugin
+# Set up our plugin
 
 file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 FILE(GLOB HDR_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 add_library(stratosphere_fms_plugin SHARED ${SRC_FILES} ${HDR_FILES})
-target_compile_options(stratosphere_fms_plugin PUBLIC -Wall -Wextra -Werror)
+
+# Set up libnav
+
+include(CMakePrintHelpers)
+option(LIBNAV "/home/betatest/Documents/programming/libnav-redist" "")
+cmake_print_variables(LIBNAV)
+target_include_directories(avionics_sys PUBLIC "${LIBNAV}/include")
+target_include_directories(stratosphere_fms_plugin PUBLIC "${LIBNAV}/include")
+file(GLOB LIBNAV_LIBS ${LIBNAV}/${ARCH}/*.a)
+cmake_print_variables(LIBNAV_LIBS)
 
 # X-Plane Plugin stuff 
 if(APPLE)
@@ -89,7 +99,8 @@ target_include_directories(libxp PUBLIC
 target_include_directories(stratosphere_fms_plugin PUBLIC "src/fmc")
 target_include_directories(avionics_sys PUBLIC "src/lib/")
 
-target_link_libraries(avionics_sys PUBLIC libnav libxp libtime)
+
+target_link_libraries(avionics_sys PUBLIC ${LIBNAV_LIBS} libxp libtime)
 target_link_libraries(stratosphere_fms_plugin PUBLIC avionics_sys)
 
 

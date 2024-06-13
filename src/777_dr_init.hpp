@@ -27,7 +27,7 @@ namespace fmc_dr
 	
 	int register_data_refs(custom_dr_ptr data_refs, dr_init drs)
 	{
-		for (int i = 0; i < int(drs.int_drs->size()); i++)
+		for (size_t i = 0; i < drs.int_drs->size(); i++)
 		{
 			int ret = drs.int_drs->at(i).init();
 
@@ -41,7 +41,7 @@ namespace fmc_dr
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < int(drs.double_drs->size()); i++)
+		for (size_t i = 0; i < drs.double_drs->size(); i++)
 		{
 			int ret = drs.double_drs->at(i).init();
 
@@ -55,7 +55,7 @@ namespace fmc_dr
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < int(drs.int_arr_drs->size()); i++)
+		for (size_t i = 0; i < drs.int_arr_drs->size(); i++)
 		{
 			int ret = drs.int_arr_drs->at(i).init();
 
@@ -69,7 +69,7 @@ namespace fmc_dr
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < int(drs.float_arr_drs->size()); i++)
+		for (size_t i = 0; i < drs.float_arr_drs->size(); i++)
 		{
 			int ret = drs.float_arr_drs->at(i).init();
 
@@ -83,7 +83,7 @@ namespace fmc_dr
 			data_refs->push_back(e);
 		}
 
-		for (int i = 0; i < int(drs.str_drs->size()); i++)
+		for (size_t i = 0; i < drs.str_drs->size(); i++)
 		{
 			int ret = drs.str_drs->at(i).init();
 
@@ -102,27 +102,27 @@ namespace fmc_dr
 
 	void unregister_data_refs(dr_init drs)
 	{
-		for (int i = 0; i < int(drs.int_drs->size()); i++)
+		for (size_t i = 0; i < drs.int_drs->size(); i++)
 		{
 			drs.int_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < int(drs.double_drs->size()); i++)
+		for (size_t i = 0; i < drs.double_drs->size(); i++)
 		{
 			drs.double_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < int(drs.int_arr_drs->size()); i++)
+		for (size_t i = 0; i < drs.int_arr_drs->size(); i++)
 		{
 			drs.int_arr_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < int(drs.float_arr_drs->size()); i++)
+		for (size_t i = 0; i < drs.float_arr_drs->size(); i++)
 		{
 			drs.float_arr_drs->at(i).unReg();
 		}
 
-		for (int i = 0; i < int(drs.str_drs->size()); i++)
+		for (size_t i = 0; i < drs.str_drs->size(); i++)
 		{
 			drs.str_drs->at(i).unReg();
 		}

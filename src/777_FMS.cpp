@@ -1,13 +1,14 @@
 #include "input_filter.hpp"
 #include "777_dr_init.hpp"
 #include "777_dr_decl.hpp"
+#include <libnav/geo_utils.hpp>
 #include <thread>
 
 #ifndef XPLM400
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
 
-constexpr double POI_CACHE_TILE_SIZE_DEG = 5.0;
+constexpr double POI_CACHE_TILE_SIZE_RAD = 5.0 * geo::DEG_TO_RAD;
 constexpr int N_FMC_REFRESH_HZ = 20;
 
 fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs, 
@@ -40,7 +41,7 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 	input_filter = std::make_shared<StratosphereAvionics::InputFiltering::InputFilter>(dead_zone, dead_zone, dead_zone);
 	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, av_out, 
-																   POI_CACHE_TILE_SIZE_DEG, N_FMC_REFRESH_HZ);
+																   POI_CACHE_TILE_SIZE_RAD, N_FMC_REFRESH_HZ);
 
 	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out, N_FMC_REFRESH_HZ);
 	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out, N_FMC_REFRESH_HZ);

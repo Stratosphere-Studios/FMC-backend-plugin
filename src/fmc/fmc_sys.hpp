@@ -12,32 +12,40 @@
 
 #include <libxp/dr_cache.hpp>
 #include <libxp/databus.hpp>
-#include <libnav/nav_db.hpp>
 #include <libtime/timer.hpp>
 #include <cstring>
 #include "avionics/avionics.hpp"
 #include "avionics/rad_nav/navaid_selector.hpp"
 
 
-enum class fmc_pages
-{
-	PAGE_OTHER = 0,
-	PAGE_RTE1 = 1,
-	PAGE_REF_NAV_DATA = 2
-};
-
-enum class ref_nav
-{
-	RAD_NAV_INHIBIT = 0,
-	RAD_NAV_VOR_ONLY_INHIBIT = 1,
-	RAD_NAV_NO_INHIBIT = 2
-};
-
-constexpr int N_CDU_OUT_LINES = 6;
-
-
 namespace StratosphereAvionics
 {
+	enum POI_types
+	{
+		POI_NULL = 0,
+		POI_WAYPOINT = 2,
+		POI_NAVAID = 3,
+		POI_AIRPORT = 5,
+		POI_RWY = 7
+	};
+
+	enum class fmc_pages
+	{
+		PAGE_OTHER = 0,
+		PAGE_RTE1 = 1,
+		PAGE_REF_NAV_DATA = 2
+	};
+
+	enum class ref_nav
+	{
+		RAD_NAV_INHIBIT = 0,
+		RAD_NAV_VOR_ONLY_INHIBIT = 1,
+		RAD_NAV_NO_INHIBIT = 2
+	};
+
+	constexpr int N_CDU_OUT_LINES = 6;
+
+
 	struct fmc_ref_nav_in_drs
 	{
 		std::string poi_id, rad_nav_inh;
@@ -71,7 +79,7 @@ namespace StratosphereAvionics
 
 	struct scratchpad_drs
 	{
-		int not_in_db_idx;
+		size_t not_in_db_idx;
 		std::vector<std::string> dr_list;
 	};
 
@@ -109,21 +117,21 @@ namespace StratosphereAvionics
 
 		geo::point get_ac_pos();
 
-		libnav::waypoint_entry update_sel_des_wpt(std::string id,
-							  std::vector<libnav::waypoint_entry> vec); // Updates SELECT DESIRED WPT page for navaids
+		libnav::waypoint_entry_t update_sel_des_wpt(std::string id,
+							  std::vector<libnav::waypoint_entry_t> vec); // Updates SELECT DESIRED WPT page for navaids
 
 		void reset_sel_navaid();
 
 		int update_ref_nav_poi_data(int n_arpt_found, int n_rwys_found, int n_wpts_found, std::string icao,
-									libnav::airport_data arpt_found, libnav::runway_entry rwy_found,
-									std::vector<libnav::waypoint_entry> wpts_found);
+									libnav::airport_data_t arpt_found, libnav::runway_entry_t rwy_found,
+									std::vector<libnav::waypoint_entry_t> wpts_found);
 
 		void reset_ref_nav_poi_data(std::vector<std::string>* nav_drs);
 
-		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, std::vector<int> types,
+		void update_ref_nav_inhibit(std::vector<std::string>* nav_drs, libnav::NavaidType types,
 									ref_nav threshold, bool add_vor);
 
-		int update_ref_nav(const std::string icao); // Updates REF NAV DATA page
+		int update_ref_nav(std::string icao); // Updates REF NAV DATA page
 
 		void ref_nav_main_loop(); // Updates REF NAV DATA page
 
@@ -135,7 +143,8 @@ namespace StratosphereAvionics
 			Otherwise, returns false.
 		*/
 
-		bool update_rte_apt(std::string in_dr, libnav::airport_data* apt_data, libnav::runway_data* rnw_data);
+		bool update_rte_apt(std::string in_dr, libnav::airport_data_t* apt_data, 
+			libnav::runway_data* rnw_data);
 
 		void update_rte1();
 
@@ -150,7 +159,8 @@ namespace StratosphereAvionics
 	private:
 		int n_refresh_hz;
 
-		std::shared_ptr<libnav::NavDB> nav_db;
+		std::shared_ptr<libnav::NavaidDB> navaid_db;
+		std::shared_ptr<libnav::ArptDB> apt_db;
 		std::shared_ptr<AvionicsSys> avionics;
 		fmc_in_drs in_drs;
 		fmc_out_drs out_drs;
@@ -160,6 +170,6 @@ namespace StratosphereAvionics
 		XPDataBus::DataRefCache* dr_cache;
 
 
-		int get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry* out);
+		int get_arrival_rwy_data(std::string rwy_id, libnav::runway_entry_t* out);
 	};
 }
