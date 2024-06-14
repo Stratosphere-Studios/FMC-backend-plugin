@@ -22,6 +22,7 @@ namespace XPDataBus
 {
 	constexpr char DEFAULT_STR_FILL_CHAR = ' ';
 	constexpr int CHAR_BUF_SIZE = 2048;
+	constexpr int PATH_BUF_SIZE = 256;
 	constexpr std::memory_order ATOMIC_ORDR = std::memory_order_seq_cst;
 
 	struct geo_point
@@ -81,8 +82,12 @@ namespace XPDataBus
 		std::string prefs_path;
 		std::string apt_dat_path;
 		std::string default_data_path;
+		std::string plugin_data_path;
+		std::string plugin_sign;
 
-		DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh);
+
+		DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh, 
+			std::string sign);
 
 		// Ran from any thread:
 
@@ -125,7 +130,9 @@ namespace XPDataBus
 		~DataBus();
 		
 	private:
+		XPLMPluginID plug_id;
 		XPLMFlightLoopID flt_loop_id;
+
 		std::unordered_map<std::string, data_ref_entry> data_refs; // Datarefs not owned by this plugin
 		std::unordered_map<std::string, generic_ptr> custom_data_refs; // Datarefs owned by this plugin
 
@@ -136,6 +143,8 @@ namespace XPDataBus
 		std::string get_apt_dat_path();
 
 		std::string get_default_data_path();
+
+		std::string get_plugin_data_path();
 
 		void add_to_mag_var_queue(geo_point point, std::promise<float>* prom);
 

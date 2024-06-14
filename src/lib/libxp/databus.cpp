@@ -3,11 +3,16 @@
 */
 
 #include "databus.hpp"
+#include <iostream>
 
 namespace XPDataBus
 {
-	DataBus::DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh)
+	DataBus::DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh,
+		std::string sign)
 	{
+		// Get plugin id
+		plug_id = XPLMFindPluginBySignature(sign.c_str());
+
 		//Get x-plane/sdk versions and path.
 
 		path_sep = new char[2];
@@ -21,6 +26,9 @@ namespace XPDataBus
 		prefs_path = get_prefs_path().append(path_sep);
 		apt_dat_path = get_apt_dat_path();
 		default_data_path = get_default_data_path();
+		plugin_data_path = get_plugin_data_path();
+		std::string tmp = "777_FMS: " + plugin_data_path + "\n";
+		XPLMDebugString(tmp.c_str());
 
 		for (size_t i = 0; i < data_refs->size(); i++)
 		{
@@ -90,6 +98,22 @@ namespace XPDataBus
 		path.append("default data");
 		path.append(path_sep);
 		return path;
+	}
+
+	std::string DataBus::get_plugin_data_path()
+	{
+		char pl_path[PATH_BUF_SIZE];
+		XPLMGetPluginInfo(plug_id, nullptr, pl_path, nullptr, nullptr);
+		char* file_name = XPLMExtractFileAndPath(pl_path);
+		while(*file_name != path_sep[0] && file_name > pl_path)
+		{
+			file_name--;
+		}
+		std::string out_path = std::string(pl_path, 0, size_t(file_name - pl_path));
+		out_path.append(path_sep);
+		out_path.append("data");
+		out_path.append(path_sep);
+		return out_path;
 	}
 
 	void DataBus::add_to_mag_var_queue(geo_point point, std::promise<float>* prom)

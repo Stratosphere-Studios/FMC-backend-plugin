@@ -10,6 +10,8 @@
 
 constexpr double POI_CACHE_TILE_SIZE_RAD = 5.0 * geo::DEG_TO_RAD;
 constexpr int N_FMC_REFRESH_HZ = 20;
+const char *PLUGIN_SIGN = "stratosphere.systems.fmsplugin";
+
 
 fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs, 
 						   &int_arr_datarefs, &float_arr_datarefs, 
@@ -38,13 +40,17 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 	(void)refcon;
 
 	float dead_zone = StratosphereAvionics::InputFiltering::DEAD_ZONE_DEFAULT;
-	input_filter = std::make_shared<StratosphereAvionics::InputFiltering::InputFilter>(dead_zone, dead_zone, dead_zone);
-	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC);
-	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, av_out, 
-																   POI_CACHE_TILE_SIZE_RAD, N_FMC_REFRESH_HZ);
+	input_filter = std::make_shared<StratosphereAvionics::InputFiltering::InputFilter>(
+			dead_zone, dead_zone, dead_zone);
+	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC, 
+		PLUGIN_SIGN);
+	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, 
+		av_out, POI_CACHE_TILE_SIZE_RAD, N_FMC_REFRESH_HZ);
 
-	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out, N_FMC_REFRESH_HZ);
-	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out, N_FMC_REFRESH_HZ);
+	fmc_l = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_l_in, fmc_l_out, 
+		N_FMC_REFRESH_HZ);
+	fmc_r = std::make_shared<StratosphereAvionics::FMC>(avionics, fmc_r_in, fmc_r_out, 
+		N_FMC_REFRESH_HZ);
 
 	avionics_thread = std::make_shared<std::thread>([]()
 		{
@@ -64,7 +70,7 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
 {
 	strcpy(outName, "777 FMS");
-	strcpy(outSig, "stratosphere.systems.fmsplugin");
+	strcpy(outSig, PLUGIN_SIGN);
 	strcpy(outDesc, "A plugin for simulating the FMS of the 777");
 
 	XPLMEnableFeature("XPLM_USE_NATIVE_PATHS", 1);

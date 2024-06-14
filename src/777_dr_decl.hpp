@@ -21,6 +21,13 @@ constexpr int DEFAULT_WPT_SUBPAGE = 1;
 
 
 std::vector<DRUtil::dref_i> int_datarefs = {
+	// Autopilot control data refs:
+	{{"Strato/777/mcp/ap_on", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/fma/active_vert_mode", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/fma/active_roll_mode", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/fma/alt_acq", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/fma/at_mode", DR_WRITABLE, false, nullptr}, 0},
+
 	{{"Strato/777/UI/messages/creating_databases", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/REF_NAV/rad_nav_inh", DR_WRITABLE, false, nullptr}, 0},
 
@@ -62,6 +69,10 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
+	// Autopilot data refs:
+	{{"Strato/777/autopilot/gain_tst", DR_WRITABLE, false, nullptr}, 0.9},
+	{{"Strato/777/autopilot/yoke_cmd_roll", DR_WRITABLE, false, nullptr}, 0},
+
 	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_fom", DR_READONLY, false, nullptr}, 0},
@@ -87,6 +98,8 @@ std::vector<DRUtil::dref_ia> int_arr_datarefs = {
 };
 
 std::vector<DRUtil::dref_fa> float_arr_datarefs = {
+	{{"Strato/777/autopilot/yoke_cmd", DR_WRITABLE, false, nullptr}, 
+		nullptr, 2},
 	{{"Strato/777/FMC/FMC_L/SEL_WPT/poi_list", DR_READONLY, false, nullptr}, 
 		nullptr, 3 * StratosphereAvionics::N_CDU_OUT_LINES},
 	{{"Strato/777/FMC/FMC_R/SEL_WPT/poi_list", DR_READONLY, false, nullptr}, 
