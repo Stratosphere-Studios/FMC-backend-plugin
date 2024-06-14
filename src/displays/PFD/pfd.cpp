@@ -91,6 +91,12 @@ namespace StratosphereAvionics
         roll_md = "";
         pitch_md = "";
 
+        spd_time = -PFD_FMA_RECT_SHOW_SEC;
+        roll_time = -PFD_FMA_RECT_SHOW_SEC;
+        pitch_time = -PFD_FMA_RECT_SHOW_SEC;
+
+        tmr = new libtime::SteadyTimer();
+
         is_stopped.store(false, std::memory_order_relaxed);
     }
 
@@ -102,9 +108,17 @@ namespace StratosphereAvionics
             int curr_roll_md = data_bus->get_datai(state_drs.fma_roll);
             int curr_pitch_md = data_bus->get_datai(state_drs.fma_pitch);
 
-            spd_md = get_at_mode_txt(ATModes(curr_spd_md));
-            roll_md = get_roll_mode_txt(RollModes(curr_roll_md));
-            pitch_md = get_pitch_mode_txt(PitchModes(curr_pitch_md));
+            std::string curr_spd = get_at_mode_txt(ATModes(curr_spd_md));
+            std::string curr_roll = get_roll_mode_txt(RollModes(curr_roll_md));
+            std::string curr_pitch = get_pitch_mode_txt(PitchModes(curr_pitch_md));
+
+            update_param(curr_spd, spd_md, &spd_time);
+            update_param(curr_roll, roll_md, &roll_time);
+            update_param(curr_pitch, pitch_md, &pitch_time);
+            
+            spd_md = curr_spd;
+            roll_md = curr_roll;
+            pitch_md = curr_pitch;
 
             std::this_thread::sleep_for(std::chrono::milliseconds(int(1000 / ref_hz)));
         }
@@ -123,6 +137,36 @@ namespace StratosphereAvionics
     std::string PFDData::get_pitch_mode()
     {
         return pitch_md;
+    }
+
+    void PFDData::destroy()
+    {
+        delete tmr;
+    }
+
+    bool PFDData::spd_changed()
+    {
+        return tmr->get_curr_time() < (spd_time + PFD_FMA_RECT_SHOW_SEC);
+    }
+
+    bool PFDData::roll_changed()
+    {
+        return tmr->get_curr_time() < (roll_time + PFD_FMA_RECT_SHOW_SEC);
+    }
+
+    bool PFDData::pitch_changed()
+    {
+        return tmr->get_curr_time() < (pitch_time + PFD_FMA_RECT_SHOW_SEC);
+    }
+
+    // Private member functions:
+
+    void PFDData::update_param(std::string& curr, std::string& prev, double *out)
+    {
+        if(curr != prev && curr != "")
+        {
+            *out = tmr->get_curr_time();
+        }
     }
 
     // PFD member functions:
@@ -172,6 +216,8 @@ namespace StratosphereAvionics
     void PFD::draw_fma(cairo_t* cr)
     {
         draw_fma_spd(cr);
+        draw_fma_roll(cr);
+        draw_fma_pitch(cr);
     }
 
     void PFD::draw_fma_spd(cairo_t* cr)
@@ -180,12 +226,51 @@ namespace StratosphereAvionics
 
         if(curr_at_mode_str != "")
         {
-            cairo_set_font_face(cr, font_face);
-            cairo_set_source_rgb(cr, GREEN.x, GREEN.y, GREEN.z);
+            cairo_utils::draw_centered_text(cr, font_face, curr_at_mode_str, 
+                {PFD_FMA_SPD_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
 
-            cairo_move_to(cr, PFD_FMA_SPD_TXT_X, PFD_FMA_TXT_Y);
-            cairo_set_font_size(cr, PFD_FMA_FONT_SZ);
-            cairo_show_text(cr, curr_at_mode_str.c_str());
+            bool mode_changed = pfd_data->spd_changed();
+            if(mode_changed)
+            {
+                cairo_utils::draw_rect(cr, {PFD_FMA_SPD_RECT_X, PFD_FMA_RECT_Y}, 
+                    {PFD_FMA_SPD_RECT_W, PFD_FMA_RECT_H}, GREEN, PFD_FMA_RECT_LINE_SZ);
+            }
+        }   
+    }
+
+    void PFD::draw_fma_roll(cairo_t* cr)
+    {
+        std::string curr_roll_mode_str = pfd_data->get_roll_mode();
+
+        if(curr_roll_mode_str != "")
+        {
+            cairo_utils::draw_centered_text(cr, font_face, curr_roll_mode_str, 
+                {PFD_FMA_ROLL_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
+
+            bool mode_changed = pfd_data->roll_changed();
+            if(mode_changed)
+            {
+                cairo_utils::draw_rect(cr, {PFD_FMA_ROLL_RECT_X, PFD_FMA_RECT_Y}, 
+                    {PFD_FMA_ROLL_RECT_W, PFD_FMA_RECT_H}, GREEN, PFD_FMA_RECT_LINE_SZ);
+            }
+        }   
+    }
+
+    void PFD::draw_fma_pitch(cairo_t* cr)
+    {
+        std::string curr_pitch_mode_str = pfd_data->get_pitch_mode();
+
+        if(curr_pitch_mode_str != "")
+        {
+            cairo_utils::draw_centered_text(cr, font_face, curr_pitch_mode_str, 
+                {PFD_FMA_PITCH_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
+
+            bool mode_changed = pfd_data->pitch_changed();
+            if(mode_changed)
+            {
+                cairo_utils::draw_rect(cr, {PFD_FMA_PITCH_RECT_X, PFD_FMA_RECT_Y}, 
+                    {PFD_FMA_PITCH_RECT_W, PFD_FMA_RECT_H}, GREEN, 3);
+            }
         }   
     }
 

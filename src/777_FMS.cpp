@@ -5,6 +5,10 @@
 #include <libnav/geo_utils.hpp>
 #include <thread>
 
+#ifdef LIN
+	#include <pthread.h>
+#endif
+
 #ifndef XPLM400
 	#error This is made to be compiled against the XPLM400 SDK
 #endif
@@ -83,6 +87,10 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 		pfd_data->update();
 	});
 
+	#ifdef LIN
+		pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
+	#endif
+
 	FT_Init_FreeType(&lib);
 	font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
     "BoeingFont.ttf", lib, &font, &myfont_face);
@@ -132,6 +140,7 @@ PLUGIN_API void	XPluginStop(void)
 		pfd_data->is_stopped.store(true, std::memory_order_relaxed);
 
 		capt_pfd->destroy();
+		pfd_data->destroy();
 
 		sim_databus->cleanup();
 		fmc_l_thread->join();

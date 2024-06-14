@@ -5,7 +5,8 @@
 #include <XPLMDisplay.h>
 #include <XPLMGraphics.h>
 #include <string>
-#include <databus.hpp>
+#include <libxp/databus.hpp>
+#include <libtime/timer.hpp>
 #include <cairo_utils.hpp>
 #include <chrono>
 #include <thread>
@@ -17,23 +18,25 @@ namespace StratosphereAvionics
 
     constexpr XPLMDrawingPhase PFD_DRAW_PHASE = xplm_Phase_Gauges;
     constexpr int PFD_DRAW_BEFORE = 0;
+    constexpr int PFD_FMA_RECT_LINE_SZ = 3;
 
-    constexpr int PFD_FMA_FONT_SZ = 50;
-    constexpr int PFD_FMA_TXT_Y = 62;
-    constexpr int PFD_FMA_SPD_TXT_X = 260;
-    constexpr int PFD_FMA_ROLL_TXT_X = 515;
-    constexpr int PFD_FMA_PITCH_TXT_X = 770;
+    constexpr double PFD_FMA_FONT_SZ = 50;
+    constexpr double PFD_FMA_TXT_Y = 42;
+    constexpr double PFD_FMA_SPD_TXT_X = 337;
+    constexpr double PFD_FMA_ROLL_TXT_X = 603;
+    constexpr double PFD_FMA_PITCH_TXT_X = 857.5;
 
-    constexpr int PFD_FMA_RECT_Y = 66;
-    constexpr int PFD_FMA_SPD_RECT_X = 207;
-    constexpr int PFD_FMA_ROLL_RECT_X = 483;
-    constexpr int PFD_FMA_PITCH_RECT_X = 730;
-    constexpr int PFD_FMA_RECT_H = 46;
-    constexpr int PFD_FMA_SPD_RECT_W = 269;
-    constexpr int PFD_FMA_ROLL_RECT_W = 240;
-    constexpr int PFD_FMA_PITCH_RECT_W = 255;
+    constexpr double PFD_FMA_RECT_Y = 20;
+    constexpr double PFD_FMA_SPD_RECT_X = 207;
+    constexpr double PFD_FMA_ROLL_RECT_X = 483;
+    constexpr double PFD_FMA_PITCH_RECT_X = 730;
+    constexpr double PFD_FMA_RECT_H = 46;
+    constexpr double PFD_FMA_SPD_RECT_W = 269;
+    constexpr double PFD_FMA_ROLL_RECT_W = 240;
+    constexpr double PFD_FMA_PITCH_RECT_W = 255;
 
     constexpr double PFD_FMA_DATA_UPDATE_HZ = 5;
+    constexpr double PFD_FMA_RECT_SHOW_SEC = 5;
 
 
     enum ATModes
@@ -101,13 +104,25 @@ namespace StratosphereAvionics
 
         std::string get_pitch_mode();
 
+        bool spd_changed();
+
+        bool roll_changed();
+
+        bool pitch_changed();
+
+        void destroy();
+
     private:
         std::string spd_md, roll_md, pitch_md;
+        double spd_time, roll_time, pitch_time;
 
         std::shared_ptr<XPDataBus::DataBus> data_bus;
         PFDdrs state_drs;
 
         double ref_hz;
+        libtime::SteadyTimer *tmr;
+
+        void update_param(std::string& curr, std::string& prev, double *out);
     };
 
     class PFD
@@ -138,6 +153,10 @@ namespace StratosphereAvionics
         void draw_fma(cairo_t* cr);
 
         void draw_fma_spd(cairo_t* cr);
+
+        void draw_fma_roll(cairo_t* cr);
+
+        void draw_fma_pitch(cairo_t* cr);
 
         void refresh_screen(cairo_t* cr);
     };

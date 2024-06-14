@@ -63,7 +63,7 @@ file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 FILE(GLOB HDR_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 add_library(stratosphere_fms_plugin SHARED ${SRC_FILES} ${HDR_FILES})
 
-target_link_libraries(pfd PUBLIC ${LIBACFUTILS_LIBS} ${OPENGL_LIBRARIES} libxp)
+target_link_libraries(pfd PUBLIC ${LIBACFUTILS_LIBS} ${OPENGL_LIBRARIES} libxp libtime)
 
 # Set up libnav
 
@@ -121,6 +121,7 @@ target_include_directories(stratosphere_fms_plugin PUBLIC "src/fmc")
 target_include_directories(stratosphere_fms_plugin PUBLIC "src/displays/PFD")
 target_include_directories(avionics_sys PUBLIC "src/lib/")
 target_include_directories(pfd PUBLIC "src/displays/common")
+target_include_directories(pfd PUBLIC "src/lib")
 
 
 target_link_libraries(avionics_sys PUBLIC ${LIBNAV_LIBS} libxp libtime)
