@@ -22,7 +22,7 @@ namespace cairo_utils
         prepare_cairo_context(cr, color, line_width);
 
         cairo_rectangle(cr, pos.x, pos.y, sz.x, sz.y);
-        cairo_stroke_preserve(cr);
+        cairo_stroke(cr);
 
         if(line_width < 0)
         {
