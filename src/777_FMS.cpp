@@ -1,6 +1,7 @@
 #include "input_filter.hpp"
 #include "777_dr_init.hpp"
 #include "777_dr_decl.hpp"
+#include "pfd.hpp"
 #include <libnav/geo_utils.hpp>
 #include <thread>
 
@@ -10,12 +11,17 @@
 
 constexpr double POI_CACHE_TILE_SIZE_RAD = 5.0 * geo::DEG_TO_RAD;
 constexpr int N_FMC_REFRESH_HZ = 20;
+constexpr vect2_t CAPT_PFD_POS = {20, 1384};
+constexpr vect2_t CAPT_PFD_SZ = {1337, 1337};
 const char *PLUGIN_SIGN = "stratosphere.systems.fmsplugin";
 
 
 fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs, 
 						   &int_arr_datarefs, &float_arr_datarefs, 
 						   &str_datarefs };
+
+StratosphereAvionics::PFDdrs pfd_drs = {"Strato/777/fma/at_mode", 
+	"Strato/777/fma/active_roll_mode", "Strato/777/fma/active_vert_mode"};
 
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
@@ -25,11 +31,17 @@ std::shared_ptr<XPDataBus::DataBus> sim_databus;
 std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
+std::shared_ptr<StratosphereAvionics::PFDData> pfd_data;
+std::shared_ptr<StratosphereAvionics::PFD> capt_pfd;
 std::shared_ptr<std::thread> avionics_thread;
 std::shared_ptr<std::thread> fmc_l_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
+std::shared_ptr<std::thread> pfd_thread;
 
 int data_refs_created = 0;
+FT_Library lib;
+FT_Face font;
+cairo_font_face_t* myfont_face;
 
 
 float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon)
@@ -64,6 +76,20 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 		{
 			fmc_r->main_loop();
 		});
+
+	pfd_data = std::make_shared<StratosphereAvionics::PFDData>(sim_databus, pfd_drs);
+	pfd_thread = std::make_shared<std::thread>([]()
+	{
+		pfd_data->update();
+	});
+
+	FT_Init_FreeType(&lib);
+	font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
+    "BoeingFont.ttf", lib, &font, &myfont_face);
+
+	capt_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
+		CAPT_PFD_POS, CAPT_PFD_SZ, 10);
+
 	return 0;
 }
 
@@ -81,6 +107,8 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
 	{
 		XPLMRegisterFlightLoopCallback(FMS_init_FLCB, -1, nullptr);
 		XPLMDebugString("777_FMS: Initializing\n");
+		glewInit();
+    	mt_cairo_render_glob_init(true);
 	}
 	else
 	{
@@ -101,10 +129,15 @@ PLUGIN_API void	XPluginStop(void)
 
 		avionics->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
+		pfd_data->is_stopped.store(true, std::memory_order_relaxed);
+
+		capt_pfd->destroy();
+
 		sim_databus->cleanup();
 		fmc_l_thread->join();
 		fmc_r_thread->join();
 		avionics_thread->join();
+		pfd_thread->join();
 
 		fmc_dr::unregister_data_refs(d_init);
 		data_refs.clear();
@@ -114,6 +147,7 @@ PLUGIN_API void	XPluginStop(void)
 		avionics->disable();
 		sim_databus->disable();
 
+		capt_pfd.reset();
 		fmc_l.reset();
 		fmc_r.reset();
 		fmc_l_thread.reset();
@@ -137,3 +171,14 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void * inP
 	(void)inMsg;
 	(void)inParam;
 }
+
+#if	IBM
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID resvd)
+{
+	UNUSED(hinst);
+	UNUSED(resvd);
+	lacf_glew_dllmain_hook(reason);
+	return (TRUE);
+}
+#endif	/* IBM */
+
