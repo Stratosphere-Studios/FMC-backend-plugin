@@ -26,8 +26,11 @@ namespace XPDataBus
 		prefs_path = get_prefs_path().append(path_sep);
 		apt_dat_path = get_apt_dat_path();
 		default_data_path = get_default_data_path();
-		plugin_data_path = get_plugin_data_path();
-		std::string tmp = "777_FMS: " + plugin_data_path + "\n";
+		plugin_data_path_no_sep = get_plugin_data_path();
+		plugin_data_path_sep = plugin_data_path_no_sep;
+		plugin_data_path_sep.append(path_sep);
+
+		std::string tmp = "777_FMS: " + plugin_data_path_no_sep + "\n";
 		XPLMDebugString(tmp.c_str());
 
 		for (size_t i = 0; i < data_refs->size(); i++)
@@ -112,7 +115,6 @@ namespace XPDataBus
 		std::string out_path = std::string(pl_path, 0, size_t(file_name - pl_path));
 		out_path.append(path_sep);
 		out_path.append("data");
-		out_path.append(path_sep);
 		return out_path;
 	}
 

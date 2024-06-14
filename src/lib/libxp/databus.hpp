@@ -82,7 +82,8 @@ namespace XPDataBus
 		std::string prefs_path;
 		std::string apt_dat_path;
 		std::string default_data_path;
-		std::string plugin_data_path;
+		std::string plugin_data_path_sep;
+		std::string plugin_data_path_no_sep;  // No trailing separator
 		std::string plugin_sign;
 
 
