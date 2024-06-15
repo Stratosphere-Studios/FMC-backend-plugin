@@ -32,12 +32,12 @@ namespace StratosphereAvionics
     constexpr int PFD_FMA_RECT_LINE_SZ = 3;
 
     constexpr double PFD_FMA_FONT_SZ = 50;
-    constexpr double PFD_FMA_TXT_Y = 42;
+    constexpr double PFD_FMA_TXT_Y = 32-5;
     constexpr double PFD_FMA_SPD_TXT_X = 337;
     constexpr double PFD_FMA_ROLL_TXT_X = 603;
     constexpr double PFD_FMA_PITCH_TXT_X = 857.5;
 
-    constexpr double PFD_FMA_RECT_Y = 20;
+    constexpr double PFD_FMA_RECT_Y = 10-5;
     constexpr double PFD_FMA_SPD_RECT_X = 207;
     constexpr double PFD_FMA_ROLL_RECT_X = 483;
     constexpr double PFD_FMA_PITCH_RECT_X = 730;
@@ -48,7 +48,7 @@ namespace StratosphereAvionics
 
     constexpr double PFD_FMA_AP_FONT_SZ = 72;
     constexpr double PFD_FMA_AP_RECT_X = 445;
-    constexpr double PFD_FMA_AP_RECT_Y = 242;
+    constexpr double PFD_FMA_AP_RECT_Y = 232-5;
     constexpr double PFD_FMA_AP_RECT_W = 276;
     constexpr double PFD_FMA_AP_RECT_H = 60;
     constexpr int PFD_FMA_AP_RECT_LINE_SZ = 4;

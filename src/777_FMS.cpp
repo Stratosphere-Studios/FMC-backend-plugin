@@ -27,7 +27,8 @@
 constexpr double POI_CACHE_TILE_SIZE_RAD = 5.0 * geo::DEG_TO_RAD;
 constexpr int N_FMC_REFRESH_HZ = 20;
 constexpr vect2_t CAPT_PFD_POS = {20, 1384};
-constexpr vect2_t CAPT_PFD_SZ = {1337, 1337};
+constexpr vect2_t FO_PFD_POS = {20, 26};
+constexpr vect2_t PFD_SZ = {1337, 1337};
 const char *PLUGIN_SIGN = "stratosphere.systems.fmsplugin";
 
 
@@ -54,12 +55,14 @@ std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<StratosphereAvionics::PFDData> pfd_data;
 std::shared_ptr<StratosphereAvionics::PFD> capt_pfd;
+std::shared_ptr<StratosphereAvionics::PFD> fo_pfd;
 std::shared_ptr<std::thread> avionics_thread;
 std::shared_ptr<std::thread> fmc_l_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
 std::shared_ptr<std::thread> pfd_thread;
 
 int data_refs_created = 0;
+bool displays_created = false;
 FT_Library lib;
 FT_Face font;
 cairo_font_face_t* myfont_face;
@@ -98,22 +101,42 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 			fmc_r->main_loop();
 		});
 
-	pfd_data = std::make_shared<StratosphereAvionics::PFDData>(sim_databus, pfd_drs, &tmp_drs);
-	pfd_thread = std::make_shared<std::thread>([]()
-	{
-		pfd_data->update();
-	});
-
-	#ifdef LIN
-		pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
-	#endif
-
 	FT_Init_FreeType(&lib);
-	font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
-    "BoeingFont.ttf", lib, &font, &myfont_face);
 
-	capt_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
-		CAPT_PFD_POS, CAPT_PFD_SZ, 10);
+	bool font_loaded = false;
+	try
+	{
+		font_loaded = font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
+    		"BoeingFont.ttf", lib, &font, &myfont_face);
+	}
+	catch(...)
+	{
+		font_loaded = false;
+	}
+	
+	if(font_loaded)
+	{
+		pfd_data = std::make_shared<StratosphereAvionics::PFDData>(sim_databus, pfd_drs, &tmp_drs);
+		pfd_thread = std::make_shared<std::thread>([]()
+		{
+			pfd_data->update();
+		});
+
+		#ifdef LIN
+			pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
+		#endif
+
+		displays_created = true;
+		capt_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
+			CAPT_PFD_POS, PFD_SZ, 10);
+
+		fo_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
+			FO_PFD_POS, PFD_SZ, 10, false);
+	}
+	else
+	{
+		XPLMDebugString("777_FMS: Failed to load font. Displays won't be created.\n");
+	}
 
 	return 0;
 }
@@ -149,15 +172,23 @@ PLUGIN_API void	XPluginStop(void)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
 
+		if(displays_created)
+		{
+			pfd_data->is_stopped.store(true, std::memory_order_relaxed);
+
+			capt_pfd->destroy();
+			fo_pfd->destroy();
+			pfd_data->destroy();
+
+			capt_pfd.reset();
+			fo_pfd.reset();
+			pfd_data.reset();
+		}
+
 		fmc_l->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 		fmc_r->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
 		avionics->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
-
-		pfd_data->is_stopped.store(true, std::memory_order_relaxed);
-
-		capt_pfd->destroy();
-		pfd_data->destroy();
 
 		sim_databus->cleanup();
 		fmc_l_thread->join();
@@ -173,7 +204,6 @@ PLUGIN_API void	XPluginStop(void)
 		avionics->disable();
 		sim_databus->disable();
 
-		capt_pfd.reset();
 		fmc_l.reset();
 		fmc_r.reset();
 		fmc_l_thread.reset();
