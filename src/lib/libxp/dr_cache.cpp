@@ -1,3 +1,15 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	This source file provides definitions of member functions of DataRefCache class,
+	which is declared in dr_cache.hpp
+	Author: discord/bruh4096#4512(Tim G.)
+*/
+
+
 #include "dr_cache.hpp"
 
 

@@ -5,7 +5,7 @@
 	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
  
 	This source file contains the implementation of the fmc for 
-	B77W by stratosphere studios. Author: discord/bruh4096#4512
+	B77W by stratosphere studios. Author: discord/bruh4096#4512(Tim G.)
 */
 
 #include "fmc_sys.hpp"

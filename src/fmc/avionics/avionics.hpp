@@ -1,3 +1,14 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	This header file contains declarations of classes, functions, etc 
+	used in the avionics implementation. Author: discord/bruh4096#4512(Tim G.)
+*/
+
+
 #pragma once
 
 #include <string>

@@ -1,3 +1,16 @@
+/*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+	This header file provides definitions and declarations of member 
+	functions used by InputFilter class. InputFilter class is used to override default
+	cockpit controls and move them using filtered joystick axis values.
+	Author: discord/bruh4096#4512(Tim G.)
+*/
+
+
 #pragma once
 
 #include "lib/libxp/dataref_structs.hpp"

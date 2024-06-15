@@ -1,8 +1,18 @@
 /*
+	This project is licensed under
+	Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (CC BY-NC-SA 4.0).
+
+	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
 	This library provides a bridge between X-plane and the plugin itself.
 	It allows the plugin to access x-plane's data from a separate thread
 	while keeping all of the calls to the XPLM api in the main thread.
+	
+	This header file contains declarations of all structures and functions used 
+	by the data bus itself
+	Author: discord/bruh4096#4512(Tim G.)
 */
+
 
 #pragma once
 

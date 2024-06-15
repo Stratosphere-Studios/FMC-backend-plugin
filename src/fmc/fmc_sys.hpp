@@ -5,7 +5,7 @@
 	A SUMMARY OF THIS LICENSE CAN BE FOUND HERE: https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 	This header file contains definitions of classes, functions, etc 
-	used in the fmc implementation. Author: discord/bruh4096#4512
+	used in the fmc implementation. Author: discord/bruh4096#4512(Tim G.)
 */
 
 #pragma once
