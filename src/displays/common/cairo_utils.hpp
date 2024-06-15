@@ -1,9 +1,16 @@
 #include <acfutils/glew.h>
 #include <acfutils/mt_cairo_render.h>
+#include <acfutils/cairo_utils.h>
 
 
 namespace cairo_utils
 {
+    struct test_drs
+    {
+        std::string x, y, w, h, radius, l_thick;
+    };
+
+
     inline void prepare_cairo_context(cairo_t* cr, vect3_t color, int line_width)
     {
         cairo_set_source_rgb(cr, color.x, color.y, color.z);
@@ -30,6 +37,20 @@ namespace cairo_utils
         }
     }
 
+    inline void draw_rounded_rect(cairo_t *cr, vect2_t pos, vect2_t sz, 
+        double radius, vect3_t color, int line_width=-1)
+    {
+        prepare_cairo_context(cr, color, line_width);
+
+        cairo_utils_rounded_rect(cr, pos.x, pos.y, sz.x, sz.y, radius);
+        cairo_stroke(cr);
+
+        if(line_width < 0)
+        {
+            cairo_fill(cr);
+        }
+    }
+
     inline void draw_tri(cairo_t* cr, vect2_t v1, vect2_t v2, vect2_t v3, vect3_t color, int line_width=-1)
     {
         prepare_cairo_context(cr, color, line_width);
@@ -39,7 +60,7 @@ namespace cairo_utils
         cairo_line_to(cr, v3.x, v3.y);
         cairo_close_path(cr);
 
-        cairo_stroke_preserve(cr);
+        cairo_stroke(cr);
 
         if(line_width < 0)
         {

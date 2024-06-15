@@ -24,8 +24,14 @@ fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs,
 						   &int_arr_datarefs, &float_arr_datarefs, 
 						   &str_datarefs };
 
-StratosphereAvionics::PFDdrs pfd_drs = {"Strato/777/fma/at_mode", 
-	"Strato/777/fma/active_roll_mode", "Strato/777/fma/active_vert_mode"};
+StratosphereAvionics::PFDdrs pfd_drs = {"Strato/777/mcp/ap_on", 
+	"Strato/777/pfd/flt_dir_pilot", "Strato/777/pfd/flt_dir_copilot", 
+	"Strato/777/fma/at_mode", "Strato/777/fma/active_roll_mode", 
+	"Strato/777/fma/active_vert_mode"};
+
+cairo_utils::test_drs tmp_drs = {"Strato/777/GUI/test_x", "Strato/777/GUI/test_y",
+	"Strato/777/GUI/test_w", "Strato/777/GUI/test_h", "Strato/777/GUI/test_r", 
+	"Strato/777/GUI/test_thick"};
 
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
@@ -81,7 +87,7 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 			fmc_r->main_loop();
 		});
 
-	pfd_data = std::make_shared<StratosphereAvionics::PFDData>(sim_databus, pfd_drs);
+	pfd_data = std::make_shared<StratosphereAvionics::PFDData>(sim_databus, pfd_drs, &tmp_drs);
 	pfd_thread = std::make_shared<std::thread>([]()
 	{
 		pfd_data->update();

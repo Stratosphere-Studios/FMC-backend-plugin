@@ -22,7 +22,11 @@ constexpr int DEFAULT_WPT_SUBPAGE = 1;
 
 std::vector<DRUtil::dref_i> int_datarefs = {
 	// Autopilot control data refs:
+	// A/P/FLT DIR annunciation:
 	{{"Strato/777/mcp/ap_on", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/pfd/flt_dir_pilot", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/pfd/flt_dir_copilot", DR_WRITABLE, false, nullptr}, 0},
+	// FMA modes:
 	{{"Strato/777/fma/active_vert_mode", DR_WRITABLE, false, nullptr}, 0},
 	{{"Strato/777/fma/active_roll_mode", DR_WRITABLE, false, nullptr}, 0},
 	{{"Strato/777/fma/alt_acq", DR_WRITABLE, false, nullptr}, 0},
@@ -69,9 +73,13 @@ std::vector<DRUtil::dref_i> int_datarefs = {
 };
 
 std::vector<DRUtil::dref_d> double_datarefs = {
-	// Autopilot data refs:
-	{{"Strato/777/autopilot/gain_tst", DR_WRITABLE, false, nullptr}, 0.9},
-	{{"Strato/777/autopilot/yoke_cmd_roll", DR_WRITABLE, false, nullptr}, 0},
+	// GUI test data refs
+	{{"Strato/777/GUI/test_x", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/GUI/test_y", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/GUI/test_w", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/GUI/test_h", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/GUI/test_r", DR_WRITABLE, false, nullptr}, 0},
+	{{"Strato/777/GUI/test_thck", DR_WRITABLE, false, nullptr}, 0},
 
 	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lat", DR_READONLY, false, nullptr}, 0},
 	{{"Strato/777/FMC/RAD_NAV/VOR_DME/pos_lon", DR_READONLY, false, nullptr}, 0},

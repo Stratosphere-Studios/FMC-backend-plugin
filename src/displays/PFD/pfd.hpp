@@ -35,8 +35,21 @@ namespace StratosphereAvionics
     constexpr double PFD_FMA_ROLL_RECT_W = 240;
     constexpr double PFD_FMA_PITCH_RECT_W = 255;
 
+    constexpr double PFD_FMA_AP_FONT_SZ = 72;
+    constexpr double PFD_FMA_AP_RECT_X = 445;
+    constexpr double PFD_FMA_AP_RECT_Y = 242;
+    constexpr double PFD_FMA_AP_RECT_W = 276;
+    constexpr double PFD_FMA_AP_RECT_H = 60;
+    constexpr int PFD_FMA_AP_RECT_LINE_SZ = 4;
+
+    constexpr double PFD_FMA_AP_TXT_X = PFD_FMA_AP_RECT_X + PFD_FMA_AP_RECT_W / 2;
+    constexpr double PFD_FMA_AP_TXT_Y = PFD_FMA_AP_RECT_Y + PFD_FMA_AP_RECT_H / 2;
+
     constexpr double PFD_FMA_DATA_UPDATE_HZ = 5;
     constexpr double PFD_FMA_RECT_SHOW_SEC = 5;
+
+    const std::string FLT_DIR_TXT = "FLT DIR";
+    const std::string AP_TXT = "A/P";
 
 
     enum ATModes
@@ -83,7 +96,7 @@ namespace StratosphereAvionics
 
     struct PFDdrs
     {
-        std::string fma_thr, fma_roll, fma_pitch;
+        std::string ap_eng, flt_dir_capt, flt_dir_fo, fma_thr, fma_roll, fma_pitch;
     };
 
 
@@ -92,17 +105,31 @@ namespace StratosphereAvionics
     public:
         std::atomic<bool> is_stopped;
 
+        cairo_utils::test_drs *test_drs;
+        vect2_t test_pos, test_sz;
+        double test_rad, test_thick;
+
 
         PFDData(std::shared_ptr<XPDataBus::DataBus> db, PFDdrs drs, 
-            double ref=PFD_FMA_DATA_UPDATE_HZ);
+            cairo_utils::test_drs *tst=nullptr, double ref=PFD_FMA_DATA_UPDATE_HZ);
 
         void update();
+
+        void update_test();
+
+        std::string get_capt_ap_fd();
+
+        std::string get_fo_ap_fd();
 
         std::string get_spd_mode();
 
         std::string get_roll_mode();
 
         std::string get_pitch_mode();
+
+        bool flt_dir_capt_changed();
+
+        bool flt_dir_fo_changed();
 
         bool spd_changed();
 
@@ -113,14 +140,18 @@ namespace StratosphereAvionics
         void destroy();
 
     private:
-        std::string spd_md, roll_md, pitch_md;
-        double spd_time, roll_time, pitch_time;
+        std::string ap_dir_cap, ap_dir_fo, spd_md, roll_md, pitch_md;
+        double fd_cap_time, fd_fo_time, spd_time, roll_time, pitch_time;
 
         std::shared_ptr<XPDataBus::DataBus> data_bus;
         PFDdrs state_drs;
 
         double ref_hz;
         libtime::SteadyTimer *tmr;
+
+        std::string get_ap_fd_txt(int ap_on, int fd_on);
+
+        void update_ap_fd();
 
         void update_param(std::string& curr, std::string& prev, double *out);
     };
@@ -129,7 +160,7 @@ namespace StratosphereAvionics
     {
     public:
         PFD(std::shared_ptr<PFDData> data, cairo_font_face_t* ff, 
-            vect2_t p, vect2_t sz, double fps);
+            vect2_t p, vect2_t sz, double fps, bool capt=true);
 
         void update_screen();
 
@@ -138,6 +169,8 @@ namespace StratosphereAvionics
         void destroy();
 
     private:
+        bool is_capt;  // True if PFD is captain side
+
         std::shared_ptr<PFDData> pfd_data;
 
         mt_cairo_render_t* render;
@@ -150,6 +183,8 @@ namespace StratosphereAvionics
         double frame_rate;
 
 
+        void draw_ap_fd(cairo_t* cr);
+
         void draw_fma(cairo_t* cr);
 
         void draw_fma_spd(cairo_t* cr);
@@ -157,6 +192,8 @@ namespace StratosphereAvionics
         void draw_fma_roll(cairo_t* cr);
 
         void draw_fma_pitch(cairo_t* cr);
+
+        void draw_test(cairo_t* cr);
 
         void refresh_screen(cairo_t* cr);
     };
