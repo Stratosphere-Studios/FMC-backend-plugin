@@ -37,7 +37,8 @@ namespace XPDataBus
 		plugin_data_path_sep = plugin_data_path_no_sep;
 		plugin_data_path_sep.append(path_sep);
 
-		std::string tmp = "777_FMS: " + plugin_data_path_no_sep + "\n";
+		std::string tmp = "777_FMS: Path to plugin data is: " + 
+			plugin_data_path_no_sep + "\n";
 		XPLMDebugString(tmp.c_str());
 
 		for (size_t i = 0; i < data_refs->size(); i++)

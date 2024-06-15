@@ -14,6 +14,7 @@
 #include "777_dr_decl.hpp"
 #include "pfd.hpp"
 #include <libnav/geo_utils.hpp>
+#include <libnav/common.hpp>
 #include <thread>
 
 #ifdef LIN
@@ -104,15 +105,21 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 	FT_Init_FreeType(&lib);
 
 	bool font_loaded = false;
-	try
+	bool font_exists = libnav::does_file_exist(sim_databus->plugin_data_path_sep+
+		"BoeingFont.ttf");
+	if(font_exists)
 	{
-		font_loaded = font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
-    		"BoeingFont.ttf", lib, &font, &myfont_face);
+		try
+		{
+			font_loaded = font_utils_try_load_font(sim_databus->plugin_data_path_no_sep.c_str(), 
+				"BoeingFont.ttf", lib, &font, &myfont_face);
+		}
+		catch(...)
+		{
+			font_loaded = false;
+		}
 	}
-	catch(...)
-	{
-		font_loaded = false;
-	}
+	
 	
 	if(font_loaded)
 	{
@@ -132,10 +139,16 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 
 		fo_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
 			FO_PFD_POS, PFD_SZ, 10, false);
+
+		XPLMDebugString("777_FMS: Displays have been created\n");
 	}
 	else
 	{
 		XPLMDebugString("777_FMS: Failed to load font. Displays won't be created.\n");
+		if(!font_exists)
+		{
+			XPLMDebugString("777_FMS: Font file not found\n");
+		}
 	}
 
 	return 0;
@@ -175,6 +188,7 @@ PLUGIN_API void	XPluginStop(void)
 		if(displays_created)
 		{
 			pfd_data->is_stopped.store(true, std::memory_order_relaxed);
+			pfd_thread->join();
 
 			capt_pfd->destroy();
 			fo_pfd->destroy();
@@ -183,6 +197,7 @@ PLUGIN_API void	XPluginStop(void)
 			capt_pfd.reset();
 			fo_pfd.reset();
 			pfd_data.reset();
+			displays_created = false;
 		}
 
 		fmc_l->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
@@ -194,7 +209,6 @@ PLUGIN_API void	XPluginStop(void)
 		fmc_l_thread->join();
 		fmc_r_thread->join();
 		avionics_thread->join();
-		pfd_thread->join();
 
 		fmc_dr::unregister_data_refs(d_init);
 		data_refs.clear();
@@ -212,6 +226,7 @@ PLUGIN_API void	XPluginStop(void)
 		sim_databus.reset();
 		input_filter.reset();
 		XPLMDebugString("777_FMS: Successfully disabled.\n");
+		data_refs_created = 0;
 	}
 	else
 	{
