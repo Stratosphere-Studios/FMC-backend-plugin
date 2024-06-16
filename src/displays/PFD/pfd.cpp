@@ -100,6 +100,9 @@ namespace StratosphereAvionics
         state_drs = drs;
         ref_hz = ref;
 
+        cap_brt = 0;
+        fo_brt = 0;
+
         ap_dir_cap = "";
         ap_dir_fo = "";
         spd_md = "";
@@ -124,6 +127,7 @@ namespace StratosphereAvionics
             update_test();
 
             update_ap_fd();
+            update_brt();
 
             int curr_spd_md = data_bus->get_datai(state_drs.fma_thr);
             int curr_roll_md = data_bus->get_datai(state_drs.fma_roll);
@@ -156,6 +160,16 @@ namespace StratosphereAvionics
             test_rad = data_bus->get_datad(test_drs->radius);
             test_thick = data_bus->get_datad(test_drs->l_thick);
         }
+    }
+
+    double PFDData::get_cap_brt()
+    {
+        return cap_brt;
+    }
+
+    double PFDData::get_fo_brt()
+    {
+        return fo_brt;
     }
 
     std::string PFDData::get_capt_ap_fd()
@@ -244,6 +258,12 @@ namespace StratosphereAvionics
         ap_dir_fo = txt_fo;
     }
 
+    void PFDData::update_brt()
+    {
+        cap_brt = double(data_bus->get_dataf(state_drs.brt_dr, state_drs.cap_brt_idx));
+        fo_brt = double(data_bus->get_dataf(state_drs.brt_dr, state_drs.fo_brt_idx));
+    }
+
     void PFDData::update_param(std::string& curr, std::string& prev, double *out)
     {
         if(curr != prev && curr != "")
@@ -299,6 +319,15 @@ namespace StratosphereAvionics
 
     // Private member functions:
 
+    double PFD::get_dsp_brt()
+    {
+        if(is_capt)
+        {
+            return pfd_data->get_cap_brt();
+        }
+        return pfd_data->get_fo_brt();
+    }
+
     void PFD::draw_ap_fd(cairo_t* cr)
     {
         std::string curr_txt = "";
@@ -317,13 +346,16 @@ namespace StratosphereAvionics
 
         if(curr_txt != "")
         {
+            double brt = get_dsp_brt();
+            vect3_t curr_green = vect3_scmul(GREEN, brt);
             cairo_utils::draw_centered_text(cr, font_face, curr_txt, 
-                {PFD_FMA_AP_TXT_X, PFD_FMA_AP_TXT_Y}, GREEN, PFD_FMA_AP_FONT_SZ);
+                {PFD_FMA_AP_TXT_X, PFD_FMA_AP_TXT_Y}, curr_green, PFD_FMA_AP_FONT_SZ);
             
             if(is_chng)
             {
                 cairo_utils::draw_rect(cr, {PFD_FMA_AP_RECT_X, PFD_FMA_AP_RECT_Y}, 
-                    {PFD_FMA_AP_RECT_W, PFD_FMA_AP_RECT_H}, GREEN, PFD_FMA_AP_RECT_LINE_SZ);
+                    {PFD_FMA_AP_RECT_W, PFD_FMA_AP_RECT_H}, curr_green, 
+                    PFD_FMA_AP_RECT_LINE_SZ);
             }
         }
     }
@@ -343,14 +375,17 @@ namespace StratosphereAvionics
 
         if(curr_at_mode_str != "")
         {
+            double brt = get_dsp_brt();
+            vect3_t curr_green = vect3_scmul(GREEN, brt);
+
             cairo_utils::draw_centered_text(cr, font_face, curr_at_mode_str, 
-                {PFD_FMA_SPD_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
+                {PFD_FMA_SPD_TXT_X, PFD_FMA_TXT_Y}, curr_green, PFD_FMA_FONT_SZ);
 
             bool mode_changed = pfd_data->spd_changed();
             if(mode_changed)
             {
                 cairo_utils::draw_rect(cr, {PFD_FMA_SPD_RECT_X, PFD_FMA_RECT_Y}, 
-                    {PFD_FMA_SPD_RECT_W, PFD_FMA_RECT_H}, GREEN, PFD_FMA_RECT_LINE_SZ);
+                    {PFD_FMA_SPD_RECT_W, PFD_FMA_RECT_H}, curr_green, PFD_FMA_RECT_LINE_SZ);
             }
         }   
     }
@@ -361,14 +396,17 @@ namespace StratosphereAvionics
 
         if(curr_roll_mode_str != "")
         {
+            double brt = get_dsp_brt();
+            vect3_t curr_green = vect3_scmul(GREEN, brt);
+
             cairo_utils::draw_centered_text(cr, font_face, curr_roll_mode_str, 
-                {PFD_FMA_ROLL_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
+                {PFD_FMA_ROLL_TXT_X, PFD_FMA_TXT_Y}, curr_green, PFD_FMA_FONT_SZ);
 
             bool mode_changed = pfd_data->roll_changed();
             if(mode_changed)
             {
                 cairo_utils::draw_rect(cr, {PFD_FMA_ROLL_RECT_X, PFD_FMA_RECT_Y}, 
-                    {PFD_FMA_ROLL_RECT_W, PFD_FMA_RECT_H}, GREEN, PFD_FMA_RECT_LINE_SZ);
+                    {PFD_FMA_ROLL_RECT_W, PFD_FMA_RECT_H}, curr_green, PFD_FMA_RECT_LINE_SZ);
             }
         }   
     }
@@ -379,14 +417,18 @@ namespace StratosphereAvionics
 
         if(curr_pitch_mode_str != "")
         {
+            double brt = get_dsp_brt();
+            vect3_t curr_green = vect3_scmul(GREEN, brt);
+
             cairo_utils::draw_centered_text(cr, font_face, curr_pitch_mode_str, 
-                {PFD_FMA_PITCH_TXT_X, PFD_FMA_TXT_Y}, GREEN, PFD_FMA_FONT_SZ);
+                {PFD_FMA_PITCH_TXT_X, PFD_FMA_TXT_Y}, curr_green, PFD_FMA_FONT_SZ);
 
             bool mode_changed = pfd_data->pitch_changed();
             if(mode_changed)
             {
                 cairo_utils::draw_rect(cr, {PFD_FMA_PITCH_RECT_X, PFD_FMA_RECT_Y}, 
-                    {PFD_FMA_PITCH_RECT_W, PFD_FMA_RECT_H}, GREEN, 3);
+                    {PFD_FMA_PITCH_RECT_W, PFD_FMA_RECT_H}, curr_green, 
+                    PFD_FMA_RECT_LINE_SZ);
             }
         }   
     }
@@ -395,8 +437,11 @@ namespace StratosphereAvionics
     {
         if(pfd_data->test_drs)
         {
+            double brt = get_dsp_brt();
+            vect3_t curr_green = vect3_scmul(GREEN, brt);
+
             cairo_utils::draw_rounded_rect(cr, pfd_data->test_pos, pfd_data->test_sz, 
-                pfd_data->test_rad, GREEN, pfd_data->test_thick);
+                pfd_data->test_rad, curr_green, pfd_data->test_thick);
         }
     }
 

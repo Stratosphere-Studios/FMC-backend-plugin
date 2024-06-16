@@ -32,12 +32,12 @@ namespace StratosphereAvionics
     constexpr int PFD_FMA_RECT_LINE_SZ = 3;
 
     constexpr double PFD_FMA_FONT_SZ = 50;
-    constexpr double PFD_FMA_TXT_Y = 32-5;
+    constexpr double PFD_FMA_TXT_Y = 27;
     constexpr double PFD_FMA_SPD_TXT_X = 337;
     constexpr double PFD_FMA_ROLL_TXT_X = 603;
     constexpr double PFD_FMA_PITCH_TXT_X = 857.5;
 
-    constexpr double PFD_FMA_RECT_Y = 10-5;
+    constexpr double PFD_FMA_RECT_Y = 5;
     constexpr double PFD_FMA_SPD_RECT_X = 207;
     constexpr double PFD_FMA_ROLL_RECT_X = 483;
     constexpr double PFD_FMA_PITCH_RECT_X = 730;
@@ -48,7 +48,7 @@ namespace StratosphereAvionics
 
     constexpr double PFD_FMA_AP_FONT_SZ = 72;
     constexpr double PFD_FMA_AP_RECT_X = 445;
-    constexpr double PFD_FMA_AP_RECT_Y = 232-5;
+    constexpr double PFD_FMA_AP_RECT_Y = 227;
     constexpr double PFD_FMA_AP_RECT_W = 276;
     constexpr double PFD_FMA_AP_RECT_H = 60;
     constexpr int PFD_FMA_AP_RECT_LINE_SZ = 4;
@@ -56,7 +56,7 @@ namespace StratosphereAvionics
     constexpr double PFD_FMA_AP_TXT_X = PFD_FMA_AP_RECT_X + PFD_FMA_AP_RECT_W / 2;
     constexpr double PFD_FMA_AP_TXT_Y = PFD_FMA_AP_RECT_Y + PFD_FMA_AP_RECT_H / 2;
 
-    constexpr double PFD_FMA_DATA_UPDATE_HZ = 5;
+    constexpr double PFD_FMA_DATA_UPDATE_HZ = 10;
     constexpr double PFD_FMA_RECT_SHOW_SEC = 5;
 
     const std::string FLT_DIR_TXT = "FLT DIR";
@@ -107,7 +107,9 @@ namespace StratosphereAvionics
 
     struct PFDdrs
     {
-        std::string ap_eng, flt_dir_capt, flt_dir_fo, fma_thr, fma_roll, fma_pitch;
+        std::string ap_eng, flt_dir_capt, flt_dir_fo, fma_thr, fma_roll, fma_pitch,
+            brt_dr;
+        int cap_brt_idx, fo_brt_idx;
     };
 
 
@@ -127,6 +129,10 @@ namespace StratosphereAvionics
         void update();
 
         void update_test();
+
+        double get_cap_brt();
+
+        double get_fo_brt();
 
         std::string get_capt_ap_fd();
 
@@ -154,6 +160,8 @@ namespace StratosphereAvionics
         std::string ap_dir_cap, ap_dir_fo, spd_md, roll_md, pitch_md;
         double fd_cap_time, fd_fo_time, spd_time, roll_time, pitch_time;
 
+        double cap_brt, fo_brt;
+
         std::shared_ptr<XPDataBus::DataBus> data_bus;
         PFDdrs state_drs;
 
@@ -163,6 +171,8 @@ namespace StratosphereAvionics
         std::string get_ap_fd_txt(int ap_on, int fd_on);
 
         void update_ap_fd();
+
+        void update_brt();
 
         void update_param(std::string& curr, std::string& prev, double *out);
     };
@@ -193,6 +203,8 @@ namespace StratosphereAvionics
         int pitch_mode;
         double frame_rate;
 
+
+        double get_dsp_brt();
 
         void draw_ap_fd(cairo_t* cr);
 

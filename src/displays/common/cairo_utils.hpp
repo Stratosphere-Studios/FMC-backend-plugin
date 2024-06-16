@@ -21,7 +21,6 @@ namespace cairo_utils
         std::string x, y, w, h, radius, l_thick;
     };
 
-
     inline void prepare_cairo_context(cairo_t* cr, vect3_t color, int line_width)
     {
         cairo_set_source_rgb(cr, color.x, color.y, color.z);

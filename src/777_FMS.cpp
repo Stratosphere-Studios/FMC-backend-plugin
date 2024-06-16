@@ -30,6 +30,8 @@ constexpr int N_FMC_REFRESH_HZ = 20;
 constexpr vect2_t CAPT_PFD_POS = {20, 1384};
 constexpr vect2_t FO_PFD_POS = {20, 26};
 constexpr vect2_t PFD_SZ = {1337, 1337};
+constexpr int CAPT_BRT_IDX = 0;
+constexpr int FO_BRT_IDX = 4;
 const char *PLUGIN_SIGN = "stratosphere.systems.fmsplugin";
 
 
@@ -40,7 +42,8 @@ fmc_dr::dr_init d_init = { &int_datarefs, &double_datarefs,
 StratosphereAvionics::PFDdrs pfd_drs = {"Strato/777/mcp/ap_on", 
 	"Strato/777/pfd/flt_dir_pilot", "Strato/777/pfd/flt_dir_copilot", 
 	"Strato/777/fma/at_mode", "Strato/777/fma/active_roll_mode", 
-	"Strato/777/fma/active_vert_mode"};
+	"Strato/777/fma/active_vert_mode", "sim/cockpit2/switches/instrument_brightness_ratio",
+	CAPT_BRT_IDX, FO_BRT_IDX};
 
 cairo_utils::test_drs tmp_drs = {"Strato/777/GUI/test_x", "Strato/777/GUI/test_y",
 	"Strato/777/GUI/test_w", "Strato/777/GUI/test_h", "Strato/777/GUI/test_r", 
