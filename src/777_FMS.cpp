@@ -27,7 +27,7 @@
 
 constexpr double POI_CACHE_TILE_SIZE_RAD = 5.0 * geo::DEG_TO_RAD;
 constexpr int N_FMC_REFRESH_HZ = 20;
-constexpr vect2_t CAPT_PFD_POS = {20, 1384};
+constexpr vect2_t CAPT_PFD_POS = {20, 1392};
 constexpr vect2_t FO_PFD_POS = {20, 26};
 constexpr vect2_t PFD_SZ = {1337, 1337};
 constexpr int CAPT_BRT_IDX = 0;
