@@ -17,7 +17,9 @@
 #include <vector>
 
 
+typedef std::vector<XPDataBus::cmd_entry>* db_cmd_ptr_t;
 typedef std::vector<XPDataBus::custom_data_ref_entry>* custom_dr_ptr;
+typedef std::vector<DRUtil::cmd_t>* cmd_ptr_t;
 typedef std::vector<DRUtil::dref_i>* dr_i_ptr;
 typedef std::vector<DRUtil::dref_d>* dr_d_ptr;
 typedef std::vector<DRUtil::dref_ia>* dr_ia_ptr;
@@ -37,8 +39,23 @@ namespace fmc_dr
 	};
 
 	
-	int register_data_refs(custom_dr_ptr data_refs, dr_init drs)
+	int register_data_refs(db_cmd_ptr_t db_cmds, custom_dr_ptr data_refs, 
+		cmd_ptr_t cmds, dr_init drs)
 	{
+		// Register custom commands
+		for(size_t i = 0; i < cmds->size(); i++)
+		{
+			int ret = cmds->at(i).reg();
+
+			if(!ret)
+			{
+				return 0;
+			}
+
+			XPDataBus::cmd_entry e = {cmds->at(i).name, cmds->at(i).cmd_ref};
+			db_cmds->push_back(e);
+		}
+		// Register custom data refs
 		for (size_t i = 0; i < drs.int_drs->size(); i++)
 		{
 			int ret = drs.int_drs->at(i).init();

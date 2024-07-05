@@ -56,6 +56,7 @@ namespace XPDataBus
 	struct set_req
 	{
 		std::string dref;
+		bool set_cmd;
 		generic_val val;
 	};
 
@@ -63,6 +64,12 @@ namespace XPDataBus
 	{
 		XPLMDataRef ref;
 		XPLMDataTypeID dr_type;
+	};
+
+	struct cmd_entry
+	{
+		std::string name;
+		XPLMCommandRef ref;
 	};
 
 	struct custom_data_ref_entry
@@ -97,7 +104,8 @@ namespace XPDataBus
 		std::string plugin_sign;
 
 
-		DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh, 
+		DataBus(std::vector<XPDataBus::cmd_entry>* cmds, 
+			std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh, 
 			std::string sign);
 
 		// Ran from any thread:
@@ -113,6 +121,8 @@ namespace XPDataBus
 		double get_datad(std::string dr_name, int offset=0);
 
 		std::string get_data_s(std::string dr_name, int offset=0);
+
+		void cmd_once(std::string cmd_name);
 
 		void set_data(std::string dr_name, generic_val value);
 
@@ -144,6 +154,7 @@ namespace XPDataBus
 		XPLMPluginID plug_id;
 		XPLMFlightLoopID flt_loop_id;
 
+		std::unordered_map<std::string, XPLMCommandRef> all_cmds;
 		std::unordered_map<std::string, data_ref_entry> data_refs; // Datarefs not owned by this plugin
 		std::unordered_map<std::string, generic_ptr> custom_data_refs; // Datarefs owned by this plugin
 
@@ -172,6 +183,8 @@ namespace XPDataBus
 		int get_data_ref(std::string* dr_name, generic_val* out);
 
 		int get_custom_data_ref(std::string* dr_name, generic_val* out);
+
+		void trigger_cmd_once(std::string* cmd_name);
 
 		void set_data_ref_value(std::string* dr_name, generic_val* in);
 

@@ -49,6 +49,7 @@ cairo_utils::test_drs tmp_drs = {"Strato/777/GUI/test_x", "Strato/777/GUI/test_y
 	"Strato/777/GUI/test_w", "Strato/777/GUI/test_h", "Strato/777/GUI/test_r", 
 	"Strato/777/GUI/test_thick"};
 
+std::vector<XPDataBus::cmd_entry> cmd_entries;
 std::vector<XPDataBus::custom_data_ref_entry> data_refs;
 
 
@@ -82,7 +83,7 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 	float dead_zone = StratosphereAvionics::InputFiltering::DEAD_ZONE_DEFAULT;
 	input_filter = std::make_shared<StratosphereAvionics::InputFiltering::InputFilter>(
 			dead_zone, dead_zone, dead_zone);
-	sim_databus = std::make_shared<XPDataBus::DataBus>(&data_refs, N_MAX_DATABUS_QUEUE_PROC, 
+	sim_databus = std::make_shared<XPDataBus::DataBus>(&cmd_entries, &data_refs, N_MAX_DATABUS_QUEUE_PROC, 
 		PLUGIN_SIGN);
 	avionics = std::make_shared<StratosphereAvionics::AvionicsSys>(sim_databus, av_in, 
 		av_out, POI_CACHE_TILE_SIZE_RAD, N_FMC_REFRESH_HZ);
@@ -165,7 +166,8 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
 
 	XPLMEnableFeature("XPLM_USE_NATIVE_PATHS", 1);
 
-	data_refs_created = fmc_dr::register_data_refs(&data_refs, d_init);
+	data_refs_created = fmc_dr::register_data_refs(&cmd_entries, &data_refs, 
+		&custom_cmds, d_init);
 
 	if (data_refs_created)
 	{

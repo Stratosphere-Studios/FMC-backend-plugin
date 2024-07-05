@@ -31,6 +31,15 @@ constexpr int DEFAULT_WPT_IDX = -1;
 constexpr int DEFAULT_WPT_SUBPAGE = 1;
 
 
+std::vector<DRUtil::cmd_t> custom_cmds = {
+	{"Strato/777/FMC/cmd_ready_L", 
+		"Called if FMC command from left CDU has been processed", nullptr},
+	{"Strato/777/FMC/cmd_ready_R", 
+		"Called if FMC command from right CDU has been processed", nullptr},
+	{"Strato/777/FMC/test_cmd", 
+		"Called if FMC command from left CDU has been processed", nullptr},
+};
+
 std::vector<DRUtil::dref_i> int_datarefs = {
 	// Autopilot control data refs:
 	// A/P/FLT DIR annunciation:

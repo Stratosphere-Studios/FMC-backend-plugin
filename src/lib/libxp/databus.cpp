@@ -14,7 +14,8 @@
 
 namespace XPDataBus
 {
-	DataBus::DataBus(std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh,
+	DataBus::DataBus(std::vector<XPDataBus::cmd_entry>* cmds, 
+		std::vector<custom_data_ref_entry>* data_refs, uint64_t max_q_refresh,
 		std::string sign)
 	{
 		// Get plugin id
@@ -41,11 +42,19 @@ namespace XPDataBus
 			plugin_data_path_no_sep + "\n";
 		XPLMDebugString(tmp.c_str());
 
-		for (size_t i = 0; i < data_refs->size(); i++)
+		for(size_t i = 0; i < cmds->size(); i++)
 		{
-			std::pair<std::string, generic_ptr> tmp = std::make_pair(data_refs->at(i).name, data_refs->at(i).val);
+			std::pair<std::string, XPLMCommandRef> tmp = std::make_pair(cmds->at(i).name, 
+				cmds->at(i).ref);
+			all_cmds.insert(tmp);
+		}
+		for (size_t i = 0; i < data_refs->size(); i++)
+		{	
+			std::pair<std::string, generic_ptr> tmp = std::make_pair(data_refs->at(i).name, 
+				data_refs->at(i).val);
 			custom_data_refs.insert(tmp);
 		}
+
 		max_queue_refresh = max_q_refresh;
 		flt_loop_id = reg_flt_loop();
 		XPLMScheduleFlightLoop(flt_loop_id, 1, true);
@@ -251,10 +260,16 @@ namespace XPDataBus
 		return val.str;
 	}
 
+	void DataBus::cmd_once(std::string cmd_name)
+	{
+		std::lock_guard<std::mutex> lock(set_queue_mutex);
+		set_queue.push(set_req{ cmd_name, true, {} });
+	}
+
 	void DataBus::set_data(std::string dr_name, generic_val value)
 	{
 		std::lock_guard<std::mutex> lock(set_queue_mutex);
-		set_queue.push(set_req{ dr_name, value });
+		set_queue.push(set_req{ dr_name, false, value });
 	}
 
 	void DataBus::set_datai(std::string dr_name, int value, int offset)
@@ -398,6 +413,24 @@ namespace XPDataBus
 			return 1;
 		}
 		return 0;
+	}
+
+	void DataBus::trigger_cmd_once(std::string* cmd_name)
+	{
+		if(all_cmds.find(*cmd_name) != all_cmds.end())
+		{
+			XPLMCommandOnce(all_cmds[*cmd_name]);
+		}
+		else
+		{
+			XPLMCommandRef ref = XPLMFindCommand(cmd_name->c_str());
+
+			if(ref != nullptr)
+			{
+				all_cmds[*cmd_name] = ref;
+				XPLMCommandOnce(ref);
+			}
+		}
 	}
 
 	void DataBus::set_data_ref_value(std::string* dr_name, generic_val* in)
@@ -599,10 +632,19 @@ namespace XPDataBus
 			std::lock_guard<std::mutex> lock(set_queue_mutex);
 			set_req data = set_queue.front();
 			set_queue.pop();
-			if (set_custom_data_ref(&data.dref, &data.val) == 0)
+
+			if(!data.set_cmd)
 			{
-				set_data_ref(&data.dref, &data.val);
+				if (set_custom_data_ref(&data.dref, &data.val) == 0)
+				{
+					set_data_ref(&data.dref, &data.val);
+				}
 			}
+			else
+			{
+				trigger_cmd_once(&data.dref);
+			}
+			
 			counter++;
 		}
 	}

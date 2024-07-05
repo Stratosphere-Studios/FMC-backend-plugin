@@ -33,6 +33,29 @@ namespace DRUtil
 
 	float regDRInDRE(float elapsedMe, float elapsedSim, int counter, void* ref);
 
+
+	struct cmd_t
+	{
+		const char *name;
+		const char *desc;
+		
+		XPLMCommandRef cmd_ref=nullptr;
+
+
+		int reg()
+		{
+			cmd_ref = XPLMCreateCommand(name, desc);
+
+			if(cmd_ref == nullptr)
+			{
+				return 0;
+			}
+
+			return 1;
+		}
+	};
+	
+
 	struct dref
 	{
 		/*
