@@ -190,30 +190,39 @@ PLUGIN_API void	XPluginStop(void)
 	{
 		XPLMDebugString("777_FMS: Disabling\n");
 
-		if(displays_created)
-		{
-			pfd_data->is_stopped.store(true, std::memory_order_relaxed);
-			pfd_thread->join();
-
-			capt_pfd->destroy();
-			fo_pfd->destroy();
-			pfd_data->destroy();
-
-			capt_pfd.reset();
-			fo_pfd.reset();
-			pfd_data.reset();
-			displays_created = false;
-		}
-
 		fmc_l->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 		fmc_r->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
 		avionics->sim_shutdown.store(true, StratosphereAvionics::UPDATE_FLG_ORDR);
 
+		if(displays_created)
+		{
+			pfd_data->is_stopped.store(true, std::memory_order_relaxed);
+		}
+
 		sim_databus->cleanup();
+
+		if(displays_created)
+		{
+			capt_pfd->destroy();
+			fo_pfd->destroy();
+
+			pfd_thread->join();
+
+			pfd_data->destroy();
+		}
+
 		fmc_l_thread->join();
 		fmc_r_thread->join();
 		avionics_thread->join();
+
+		if(displays_created)
+		{
+			capt_pfd.reset();
+			fo_pfd.reset();
+			pfd_data.reset();
+			displays_created = false;
+		}
 
 		fmc_dr::unregister_data_refs(d_init);
 		data_refs.clear();
