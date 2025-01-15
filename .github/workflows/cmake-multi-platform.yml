@@ -18,7 +18,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        cmake
+        homebrew
         gcc-14
 
     
