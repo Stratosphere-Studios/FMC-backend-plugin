@@ -18,9 +18,10 @@ jobs:
       shell: bash
       run: |
         cd /Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/
-        ls
         mkdir build
         cd build
     
     - name: build
-      run: cmake -DCMAKE_CXX_COMPILER="g++-14" -DCMAKE_C_COMPILER="gcc-14" -DLIBACFUTILS=/Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/deps/libacfutils-master -DLIBNAV=/Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/deps/libnav-redist-main && make
+      run: |
+        cmake -DCMAKE_CXX_COMPILER="g++-14" -DCMAKE_C_COMPILER="gcc-14" -DLIBACFUTILS=/Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/deps/libacfutils-master -DLIBNAV=/Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/deps/libnav-redist-main
+        make
