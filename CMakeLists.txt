@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(777_FMS CXX)
 
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror  -fPIC -g")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -17,7 +18,11 @@ add_definitions(-DXPLM200=1 -DXPLM210=1 -DXPLM300=1 -DXPLM301=1 -DXPLM400 -DDEBU
 if(APPLE)
 	set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for Mac OS X" FORCE)
 	add_definitions(-DAPL=1 -DIBM=0 -DLIN=0)
-    set(ARCH "mac64")
+    	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+    	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+   	set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS} -static-libgcc -s")
+    	set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS}  -static-libgcc -static-libstdc++ -s")
+    	set(ARCH "mac64")
 elseif(WIN32)
 	add_definitions(-DAPL=0 -DIBM=1 -DLIN=0)
     add_definitions(-D_WIN32_WINNT=0x0600)
@@ -37,6 +42,7 @@ endif()
 option(LIBACFUTILS "")
 
 file(GLOB LIBACFUTILS_LIBS ${LIBACFUTILS}/libacfutils-redist/${ARCH}/lib/*.a)
+
 if(WIN32)
     list(APPEND LIBACFUTILS_LIBS crypt32 ws2_32 gdi32 dbghelp psapi winmm)
 else()
