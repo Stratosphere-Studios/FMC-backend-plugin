@@ -17,6 +17,4 @@ jobs:
       id: strings
       shell: bash
       run: |
-        cd /Users/runner/work/FMC-backend-plugin/
-        ls
-        
+        cd /Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/build && ls
