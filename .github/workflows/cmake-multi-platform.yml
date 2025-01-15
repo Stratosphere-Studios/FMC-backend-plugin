@@ -18,7 +18,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        homebrew
         gcc-14
+        brew install gcc
 
     
