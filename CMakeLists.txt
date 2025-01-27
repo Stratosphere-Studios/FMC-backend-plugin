@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(777_FMS CXX)
 
+include(CMakePrintHelpers)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror  -fPIC -g")
 
@@ -39,7 +40,7 @@ endif()
 
 # Set up libacfutils
 
-option(LIBACFUTILS "")
+set(LIBACFUTILS "${CMAKE_CURRENT_SOURCE_DIR}/deps/libacfutils-master/")
 
 file(GLOB LIBACFUTILS_LIBS ${LIBACFUTILS}/libacfutils-redist/${ARCH}/lib/*.a)
 
@@ -73,9 +74,8 @@ target_link_libraries(pfd PUBLIC ${LIBACFUTILS_LIBS} ${OPENGL_LIBRARIES} libxp l
 
 # Set up libnav
 
-include(CMakePrintHelpers)
-option(LIBNAV "/home/betatest/Documents/programming/libnav-redist" "")
-cmake_print_variables(LIBNAV)
+set(LIBNAV "${CMAKE_CURRENT_SOURCE_DIR}/deps/libnav-redist-main")
+#cmake_print_variables(LIBNAV)
 target_include_directories(avionics_sys PUBLIC "${LIBNAV}/include")
 target_include_directories(stratosphere_fms_plugin PUBLIC "${LIBNAV}/include")
 file(GLOB LIBNAV_LIBS ${LIBNAV}/${ARCH}/*.a)
@@ -157,3 +157,11 @@ else()
 	set_target_properties(stratosphere_fms_plugin PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_BUILD_DIR}/lin_x64" )
 endif()
+
+cmake_print_variables(LIBNAV)
+cmake_print_variables(LIBNAV_LIBS)
+cmake_print_variables(LIBACFUTILS)
+cmake_print_variables(LIBACFUTILS_LIBS)
+cmake_print_variables(PLUGIN_BUILD_DIR)
+cmake_print_variables(CMAKE_CURRENT_SOURCE_DIR)
+cmake_print_variables(OPENGL_LIBRARIES)

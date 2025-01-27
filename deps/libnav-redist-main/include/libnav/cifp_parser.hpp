@@ -353,9 +353,10 @@ namespace libnav
 
         Airport(std::string icao, std::shared_ptr<ArptDB> arpt_db, 
             std::shared_ptr<NavaidDB> navaid_db, std::string cifp_path="", 
-            std::string postfix=".dat", bool use_pr=false, appr_pref_db_t pr_db = APPR_PREF);
+            std::string postfix=".dat", bool use_pr=false, appr_pref_db_t pr_db = APPR_PREF, 
+            arinc_leg_t* leg_ptr=nullptr);
 
-        Airport(Airport& copy);
+        Airport(Airport& copy, arinc_leg_t* leg_ptr=nullptr);
 
         std::vector<std::string> get_rwys();
 
@@ -391,6 +392,7 @@ namespace libnav
 
     private:
         bool use_appch_prefix;
+        bool self_alloc;
         appr_pref_db_t appch_prefix_db;
         arinc_rwy_db_t rwy_db;
         arinc_leg_t* arinc_legs;
