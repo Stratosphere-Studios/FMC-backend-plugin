@@ -1,0 +1,18 @@
+# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+name: Build for macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mac_build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: do nothing
+      shell: bash
+      run: |
+        echo "don't use this workflow on master branch for now"
