@@ -133,10 +133,6 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 			pfd_data->update();
 		});
 
-		#ifdef LIN
-			#pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
-		#endif
-
 		displays_created = true;
 		capt_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
 			CAPT_PFD_POS, PFD_SZ, 10);
