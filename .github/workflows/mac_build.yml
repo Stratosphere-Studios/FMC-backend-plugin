@@ -19,11 +19,6 @@ jobs:
       run: |
         cd /Users/runner/work/FMC-backend-plugin/FMC-backend-plugin/
         mkdir build
-        ls
-        cmake .. -DCMAKE_CXX_COMPILER="g++-14" -DCMAKE_C_COMPILER="gcc-14"
-    
-    - name: build
-      run: |
         cd build
-        ls
+        cmake .. -DCMAKE_CXX_COMPILER="g++-14" -DCMAKE_C_COMPILER="gcc-14"
         make
