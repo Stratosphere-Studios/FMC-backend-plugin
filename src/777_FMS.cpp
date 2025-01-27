@@ -134,7 +134,7 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 		});
 
 		#ifdef LIN
-			pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
+			#pthread_setname_np(pfd_thread->native_handle(), "PFD thread");
 		#endif
 
 		displays_created = true;
