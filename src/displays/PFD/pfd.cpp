@@ -66,27 +66,6 @@ namespace StratosphereAvionics
             return "FLC SPD";
         }
     }
-    
-
-    void pfd_display_render_cb(cairo_t *cr, unsigned w, unsigned h, void *data)
-    {
-        UNUSED(w);
-        UNUSED(h);
-
-        PFD* dsp = reinterpret_cast<PFD*>(data);
-        dsp->perform_cairo_drawing(cr);
-    }
-
-    int pfd_draw_loop(XPLMDrawingPhase phase, int is_before, void *refcon)
-    {
-        UNUSED(phase);
-        UNUSED(is_before);
-
-        PFD* dsp = reinterpret_cast<PFD*>(refcon);
-        dsp->update_screen();
-        return 1;
-    }
-
 
     // PFDData member functions:
     // Public member functions:
@@ -276,7 +255,7 @@ namespace StratosphereAvionics
     // Public member functions:
 
     PFD::PFD(std::shared_ptr<PFDData> data, cairo_font_face_t* ff, 
-        vect2_t p, vect2_t sz, double fps, bool capt)
+        vect2_t p, vect2_t sz, bool capt)
     {
         is_capt = capt;
 
@@ -285,36 +264,22 @@ namespace StratosphereAvionics
         font_face = ff;
         pos = p;
         size = sz;
-        frame_rate = fps;
-
-        render = mt_cairo_render_init(
-            size.x, size.y,           // The size of our renderer/display
-            fps,
-            NULL, pfd_display_render_cb, NULL,  // callback. init, render, fini. only render is required
-            this                            // arbitrary data pointer, passed to callbacks
-        );
-
-        XPLMRegisterDrawCallback(pfd_draw_loop, PFD_DRAW_PHASE, PFD_DRAW_BEFORE, this);
     }
 
-    void PFD::update_screen()
-    {
-        mt_cairo_render_draw(render, pos, size);
+    std::pair<double, double> PFD::GetDrawPos() const {
+        return {pos.x, pos.y};
     }
 
-    void PFD::perform_cairo_drawing(cairo_t* cr)
+    std::pair<double, double> PFD::GetDrawSize() const {
+        return {size.x, size.y};
+    }
+
+    void PFD::Draw(cairo_t* cr)
     {
         refresh_screen(cr);
 
         draw_fma(cr);
         draw_ap_fd(cr);
-    }
-
-    void PFD::destroy()
-    {
-        XPLMUnregisterDrawCallback(pfd_draw_loop, PFD_DRAW_PHASE, PFD_DRAW_BEFORE, this);
-        mt_cairo_render_fini(render);
-        render = nullptr;
     }
 
     // Private member functions:

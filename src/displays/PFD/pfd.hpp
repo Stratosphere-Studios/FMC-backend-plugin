@@ -21,6 +21,7 @@
 #include <cairo_utils.hpp>
 #include <chrono>
 #include <thread>
+#include <utility>
 
 
 namespace StratosphereAvionics
@@ -99,12 +100,6 @@ namespace StratosphereAvionics
 
     inline std::string get_pitch_mode_txt(PitchModes mode);
 
-
-    inline void pfd_display_render_cb(cairo_t *cr, unsigned w, unsigned h, void *data);
-
-    inline int pfd_draw_loop(XPLMDrawingPhase phase, int is_before, void *refcon);
-
-
     struct PFDdrs
     {
         std::string ap_eng, flt_dir_capt, flt_dir_fo, fma_thr, fma_roll, fma_pitch,
@@ -181,27 +176,25 @@ namespace StratosphereAvionics
     {
     public:
         PFD(std::shared_ptr<PFDData> data, cairo_font_face_t* ff, 
-            vect2_t p, vect2_t sz, double fps, bool capt=true);
+            vect2_t p, vect2_t sz, bool capt=true);
 
-        void update_screen();
+        std::pair<double, double> GetDrawPos() const;
 
-        void perform_cairo_drawing(cairo_t* cr);
+        std::pair<double, double> GetDrawSize() const;
 
-        void destroy();
+        void Draw(cairo_t* cr);
 
     private:
         bool is_capt;  // True if PFD is captain side
 
         std::shared_ptr<PFDData> pfd_data;
 
-        mt_cairo_render_t* render;
         cairo_font_face_t* font_face;
         vect2_t pos;
         vect2_t size;
         int spd_mode;
         int roll_mode;
         int pitch_mode;
-        double frame_rate;
 
 
         double get_dsp_brt();

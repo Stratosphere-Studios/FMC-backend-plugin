@@ -13,6 +13,7 @@
 #include "777_dr_init.hpp"
 #include "777_dr_decl.hpp"
 #include "pfd.hpp"
+#include "displays/common/xplane_display.hpp"
 #include <libnav/geo_utils.hpp>
 #include <libnav/common.hpp>
 #include <thread>
@@ -30,6 +31,7 @@ constexpr int N_FMC_REFRESH_HZ = 20;
 constexpr vect2_t CAPT_PFD_POS = {20, 1392};
 constexpr vect2_t FO_PFD_POS = {20, 26};
 constexpr vect2_t PFD_SZ = {1337, 1337};
+constexpr double PFD_FPS = 10.0;
 constexpr int CAPT_BRT_IDX = 0;
 constexpr int FO_BRT_IDX = 4;
 const char *PLUGIN_SIGN = "stratosphere.systems.fmsplugin";
@@ -59,8 +61,9 @@ std::shared_ptr<StratosphereAvionics::AvionicsSys> avionics;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_l;
 std::shared_ptr<StratosphereAvionics::FMC> fmc_r;
 std::shared_ptr<StratosphereAvionics::PFDData> pfd_data;
-std::shared_ptr<StratosphereAvionics::PFD> capt_pfd;
-std::shared_ptr<StratosphereAvionics::PFD> fo_pfd;
+std::shared_ptr<StratosphereAvionics::XplaneDisplay> capt_pfd;
+std::shared_ptr<StratosphereAvionics::XplaneDisplay> fo_pfd;
+std::vector<StratosphereAvionics::XplaneDisplay*> displays;
 std::shared_ptr<std::thread> avionics_thread;
 std::shared_ptr<std::thread> fmc_l_thread;
 std::shared_ptr<std::thread> fmc_r_thread;
@@ -138,11 +141,13 @@ float FMS_init_FLCB(float elapsedMe, float elapsedSim, int counter, void* refcon
 		#endif
 
 		displays_created = true;
-		capt_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
-			CAPT_PFD_POS, PFD_SZ, 10);
-
-		fo_pfd = std::make_shared<StratosphereAvionics::PFD>(pfd_data, myfont_face, 
-			FO_PFD_POS, PFD_SZ, 10, false);
+		
+		displays.push_back(
+			StratosphereAvionics::CreateGenericXplaneDisplay<StratosphereAvionics::PFD>(
+			PFD_FPS, pfd_data, myfont_face, CAPT_PFD_POS, PFD_SZ));
+		displays.push_back(
+			StratosphereAvionics::CreateGenericXplaneDisplay<StratosphereAvionics::PFD>(
+			PFD_FPS, pfd_data, myfont_face, FO_PFD_POS, PFD_SZ, false));
 
 		XPLMDebugString("777_FMS: Displays have been created\n");
 	}
@@ -204,8 +209,10 @@ PLUGIN_API void	XPluginStop(void)
 
 		if(displays_created)
 		{
-			capt_pfd->destroy();
-			fo_pfd->destroy();
+			for(std::size_t i = 0; i < displays.size(); ++i) {
+				displays[i]->Destroy();
+				delete displays[i];
+			}
 
 			pfd_thread->join();
 
